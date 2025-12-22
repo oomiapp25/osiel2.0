@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getEncouragement, speakText, playSoundEffect, getDynamicInstruction } from '../../services/geminiService';
+import { getEncouragement, speakText, playSoundEffect, getDynamicInstruction } from '../../services/geminiService.ts';
 import confetti from 'https://cdn.skypack.dev/canvas-confetti';
 import { Sparkles } from 'lucide-react';
 

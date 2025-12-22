@@ -1,15 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Home, Settings, Trophy, Sparkles, Baby, Star, Circle, Square, Triangle } from 'lucide-react';
-import { BUDDIES } from './constants';
-import CountingGame from './components/Games/CountingGame';
-import ShapesGame from './components/Games/ShapesGame';
-import SizesGame from './components/Games/SizesGame';
-import PatternsGame from './components/Games/PatternsGame';
-import BodyPartsGame from './components/Games/BodyPartsGame';
-import ParentalControl from './components/ParentalControl';
-import { speakText, playSoundEffect } from './services/geminiService';
-import { BuddyLevels } from './types';
+import { BUDDIES } from './constants.tsx';
+import CountingGame from './components/Games/CountingGame.tsx';
+import ShapesGame from './components/Games/ShapesGame.tsx';
+import SizesGame from './components/Games/SizesGame.tsx';
+import PatternsGame from './components/Games/PatternsGame.tsx';
+import BodyPartsGame from './components/Games/BodyPartsGame.tsx';
+import ParentalControl from './components/ParentalControl.tsx';
+import { speakText, playSoundEffect } from './services/geminiService.ts';
+import { BuddyLevels } from './types.ts';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'welcome' | 'selection' | 'game' | 'rewards'>('welcome');
