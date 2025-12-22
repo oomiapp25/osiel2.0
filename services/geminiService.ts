@@ -1,35 +1,49 @@
 
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
+// Eliminada la dependencia de @google/genai para usar lógica local
 export const getDynamicInstruction = async (gameType: string, target: string) => {
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Eres un narrador de juegos para niños de 3 años. 
-      Estamos jugando a ${gameType}. El objetivo es ${target}. 
-      Dame una instrucción MUY CORTA (máximo 6 palabras), divertida y diferente. 
-      Ejemplo para nariz: "¡Toca la naricita de Maya!" o "¡Maya quiere oler flores, busca su nariz!".
-      Responde solo con la frase.`,
-    });
-    return response.text?.trim() || `Busca ${target}`;
-  } catch (error) {
-    return `¿Dónde está ${target}?`;
-  }
+  const instructions: Record<string, string[]> = {
+    "contar": [
+      `¡Vamos a contar ${target}!`,
+      `¿Me ayudas a contar ${target}?`,
+      `¡Busca y toca ${target}!`,
+      `¡Contemos juntos: ${target}!`,
+      `¡Toca cada uno de los ${target}!`
+    ],
+    "reconocer partes del rostro": [
+      `¿Dónde está la ${target}?`,
+      `¡Toca la ${target} de Maya!`,
+      `¡Maya quiere que busques su ${target}!`,
+      `¿Puedes encontrar la ${target}?`,
+      `¡Señala la ${target} de la monita!`
+    ],
+    "shapes": [
+      `¿Dónde está el ${target}?`,
+      `¡Busca el ${target} de colores!`,
+      `¡Toca el ${target} ahora!`,
+      `¿Puedes ver el ${target}?`
+    ],
+    "sizes": [
+      `Toca el más ${target}`,
+      `¿Cuál es el ${target}?`,
+      `¡Busca el objeto ${target}!`
+    ]
+  };
+
+  const pool = instructions[gameType] || [`Busca ${target}`];
+  return pool[Math.floor(Math.random() * pool.length)];
 };
 
 export const getEncouragement = async (buddyName: string, action: string) => {
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Eres ${buddyName}, un amiguito tierno para niños de 3 años. 
-      El niño acaba de ${action}. Dale un mensaje de ánimo cortísimo y alegre.`,
-    });
-    return response.text?.trim() || "¡Muy bien!";
-  } catch (error) {
-    return "¡Increíble!";
-  }
+  const messages = [
+    "¡Lo hiciste genial!",
+    "¡Eres increíble!",
+    "¡Muy bien hecho!",
+    "¡Qué inteligente!",
+    "¡Sigue así, campeón!",
+    "¡Excelente trabajo!",
+    "¡Me encanta cómo juegas!"
+  ];
+  return messages[Math.floor(Math.random() * messages.length)];
 };
 
 export const speakText = (text: string) => {

@@ -1,7 +1,5 @@
 {
   "name": "Osiel - Matemáticas para Niños",
   "description": "Una aplicación educativa interactiva diseñada para niños de 3 años, que enseña conceptos básicos de matemáticas como conteo, formas y colores a través de amiguitos animados y juegos táctiles.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "requestFramePermissions": []
 }
