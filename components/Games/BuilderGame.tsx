@@ -27,12 +27,12 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
     name: 'Casita',
     icon: <Home />,
     bg: 'bg-green-50',
-    prompt: '¡Construye una casita! Pon las paredes y el techo arriba.',
+    prompt: '¡Construye una casita! Pon las paredes abajo y el techo arriba.',
     parts: [
-      { type: 'wall', name: 'Pared', color: 'bg-red-500', renderType: 'rect', w: 150, h: 120 },
-      { type: 'roof', name: 'Techo', color: 'bg-gray-800', renderType: 'triangle', w: 180, h: 90 },
-      { type: 'door', name: 'Puerta', color: 'bg-amber-800', renderType: 'door', w: 45, h: 75 },
-      { type: 'window', name: 'Ventana', color: 'bg-blue-200', renderType: 'window', w: 40, h: 40 },
+      { type: 'wall', name: 'Pared', color: 'bg-red-500', renderType: 'rect', w: 160, h: 120 },
+      { type: 'roof', name: 'Techo', color: 'bg-gray-800', renderType: 'triangle', w: 190, h: 90 },
+      { type: 'door', name: 'Puerta', color: 'bg-amber-800', renderType: 'door', w: 50, h: 80 },
+      { type: 'window', name: 'Ventana', color: 'bg-blue-200', renderType: 'window', w: 45, h: 45 },
     ]
   },
   snowman: {
@@ -41,11 +41,11 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
     bg: 'bg-blue-50',
     prompt: '¡Haz un muñeco de nieve! Pon las bolas una sobre otra.',
     parts: [
-      { type: 'base', name: 'Abajo', color: 'bg-white', renderType: 'circle', w: 130, h: 130 },
-      { type: 'middle', name: 'Medio', color: 'bg-white', renderType: 'circle', w: 100, h: 100 },
-      { type: 'head', name: 'Cabeza', color: 'bg-white', renderType: 'circle', w: 70, h: 70 },
-      { type: 'nose', name: 'Nariz', color: 'bg-orange-500', renderType: 'triangle', w: 15, h: 25 },
-      { type: 'hat', name: 'Sombrero', color: 'bg-gray-900', renderType: 'rect', w: 60, h: 40 },
+      { type: 'base', name: 'Abajo', color: 'bg-white', renderType: 'circle', w: 140, h: 140 },
+      { type: 'middle', name: 'Medio', color: 'bg-white', renderType: 'circle', w: 110, h: 110 },
+      { type: 'head', name: 'Cabeza', color: 'bg-white', renderType: 'circle', w: 80, h: 80 },
+      { type: 'nose', name: 'Nariz', color: 'bg-orange-500', renderType: 'triangle', w: 18, h: 30 },
+      { type: 'hat', name: 'Sombrero', color: 'bg-gray-900', renderType: 'rect', w: 70, h: 45 },
     ]
   },
   clown: {
@@ -54,11 +54,11 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
     bg: 'bg-yellow-50',
     prompt: '¡Un payaso! Pon la cara, los ojitos y su naricita roja.',
     parts: [
-      { type: 'face', name: 'Cara', color: 'bg-white', renderType: 'circle', w: 130, h: 130 },
-      { type: 'eye', name: 'Ojo', color: 'bg-black', renderType: 'eye', w: 18, h: 18 },
-      { type: 'nose', name: 'Nariz', color: 'bg-red-600', renderType: 'circle', w: 25, h: 25 },
-      { type: 'hat', name: 'Gorro', color: 'bg-yellow-400', renderType: 'triangle', w: 100, h: 110 },
-      { type: 'bowtie', name: 'Moño', color: 'bg-blue-500', renderType: 'rect', w: 90, h: 35 },
+      { type: 'face', name: 'Cara', color: 'bg-white', renderType: 'circle', w: 140, h: 140 },
+      { type: 'eye', name: 'Ojo', color: 'bg-black', renderType: 'eye', w: 20, h: 20 },
+      { type: 'nose', name: 'Nariz', color: 'bg-red-600', renderType: 'circle', w: 30, h: 30 },
+      { type: 'hat', name: 'Gorro', color: 'bg-yellow-400', renderType: 'triangle', w: 110, h: 120 },
+      { type: 'bowtie', name: 'Moño', color: 'bg-blue-500', renderType: 'rect', w: 100, h: 40 },
     ]
   }
 };
@@ -117,7 +117,7 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
     const newId = Date.now();
     const newPart: PlacedPart = {
       id: newId, type: part.type,
-      x: 20 + (Math.random() * 10), y: 30 + (Math.random() * 10),
+      x: 30 + (Math.random() * 5), y: 30 + (Math.random() * 5),
       width: part.w, height: part.h, color: part.color, renderType: part.renderType
     };
     setPlacedParts(prev => [...prev, newPart]);
@@ -155,9 +155,9 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
   const moveActivePart = (clientX: number, clientY: number) => {
     if (draggingId === null || !containerRef.current) return;
     
-    // Throttled drag sound
+    // Throttled drag sound para no saturar el móvil
     const now = Date.now();
-    if (now - lastMoveTimeRef.current > 100) {
+    if (now - lastMoveTimeRef.current > 120) {
       playSoundEffect('drag');
       lastMoveTimeRef.current = now;
     }
@@ -175,6 +175,7 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
       speakText("¡Pon más piezas!");
       return;
     }
+    initAudio();
     setIsFinished(true);
     playSoundEffect('complete');
     confetti({ particleCount: 150, spread: 70, origin: { y: 0.7 } });
@@ -206,7 +207,7 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
   return (
     <div className={`flex flex-col h-full ${TEMPLATES[template].bg} transition-colors duration-500 relative`}>
       <div className="p-2 bg-white/60 backdrop-blur-sm border-b-2 border-orange-100 shrink-0 flex justify-between items-center px-4">
-        <button onClick={() => setTemplate(null)} className="p-2 bg-orange-100 text-orange-600 rounded-xl font-kids text-xs flex items-center gap-1">
+        <button onClick={() => { initAudio(); setTemplate(null); }} className="p-2 bg-orange-100 text-orange-600 rounded-xl font-kids text-xs flex items-center gap-1">
           <RotateCcw size={14} /> Volver
         </button>
         <h2 className="text-sm md:text-base font-kids text-orange-800 text-center flex-grow">{feedback}</h2>
@@ -268,12 +269,12 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
               ${placedParts.length >= 2 ? 'bg-green-500 animate-bounce' : 'bg-gray-400 opacity-50'}`}
           >
             <Check size={40} className="text-white" />
-            <span className="absolute -top-2 bg-white text-green-600 px-2 rounded-full font-kids text-xs shadow-sm">LISTO</span>
+            <span className="absolute -top-2 bg-white text-green-600 px-2 rounded-full font-kids text-xs shadow-sm uppercase">Listo</span>
           </button>
         </>
       ) : (
         <div className="p-6 flex flex-col items-center bg-white gap-4">
-          <button onClick={onComplete} className="bg-orange-500 text-white px-12 py-5 rounded-full text-3xl font-kids shadow-2xl animate-bounce">
+          <button onClick={() => { initAudio(); onComplete(); }} className="bg-orange-500 text-white px-12 py-5 rounded-full text-3xl font-kids shadow-2xl animate-bounce">
             ¡BRAVO!
           </button>
         </div>

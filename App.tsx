@@ -19,33 +19,25 @@ const App: React.FC = () => {
   const [showParental, setShowParental] = useState(false);
   const [stickers, setStickers] = useState(0);
   const [buddyLevels, setBuddyLevels] = useState<any>({
-    toby: 1,
-    lila: 1,
-    payasin: 1,
-    gogo: 1,
-    pipo: 1,
-    maya: 1,
-    bruno: 1
+    toby: 1, lila: 1, payasin: 1, gogo: 1, pipo: 1, maya: 1, bruno: 1
   });
 
-  useEffect(() => {
-    if (view === 'welcome') {
-      speakText("¡Hola! Soy Osiel. Vamos a jugar. Toca la pantalla para empezar.");
-    }
-  }, [view]);
+  // CRÍTICO: No llamamos a speakText en useEffect al inicio porque fallará en móviles
+  // El audio se desbloquea en handleStart tras el primer toque.
 
   const handleStart = () => {
-    initAudio(); // Desbloquea el audio en móviles
+    initAudio(); // Desbloqueo inmediato en evento de usuario
     playSoundEffect('pop');
     setView('selection');
+    // Saludo después del desbloqueo
+    speakText("¡Hola! Soy Osiel. ¿Con quién quieres jugar hoy?");
   };
 
   const startBuddyAventure = (buddyId: keyof typeof BUDDIES) => {
-    initAudio();
+    initAudio(); 
     playSoundEffect('correct');
     setActiveBuddy(buddyId);
-    const level = buddyLevels[buddyId];
-    speakText(`¡Vamos! ${BUDDIES[buddyId].name} te enseñará. Nivel ${level}.`);
+    speakText(`¡Vamos! ${BUDDIES[buddyId].name} te enseñará.`);
     setView('game');
   };
 
@@ -71,7 +63,7 @@ const App: React.FC = () => {
       </div>
 
       <header className="relative z-30 p-4 md:p-6 flex justify-between items-center w-full max-w-7xl mx-auto shrink-0">
-        <button onClick={() => { playSoundEffect('pop'); setView('selection'); }} className="bg-white/90 p-3 rounded-2xl shadow-lg border-b-4 border-gray-200 active:translate-y-1">
+        <button onClick={() => { initAudio(); playSoundEffect('pop'); setView('selection'); }} className="bg-white/90 p-3 rounded-2xl shadow-lg border-b-4 border-gray-200 active:translate-y-1">
           <Home className="text-blue-500 w-6 h-6 md:w-8 md:h-8" />
         </button>
         <div className="flex items-center gap-3">
@@ -79,7 +71,7 @@ const App: React.FC = () => {
             <Trophy className="text-yellow-500 w-5 h-5 md:w-6 md:h-6" />
             <span className="font-kids text-lg md:text-xl text-yellow-700">{stickers}</span>
           </div>
-          <button onClick={() => setShowParental(true)} className="bg-white/90 p-3 rounded-2xl shadow-lg border-b-4 border-gray-200">
+          <button onClick={() => { initAudio(); setShowParental(true); }} className="bg-white/90 p-3 rounded-2xl shadow-lg border-b-4 border-gray-200">
             <Settings className="text-gray-500 w-6 h-6 md:w-8 md:h-8" />
           </button>
         </div>
