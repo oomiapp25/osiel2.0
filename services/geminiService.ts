@@ -1,49 +1,29 @@
 
+let audioContext: AudioContext | null = null;
+
+export const initAudio = () => {
+  if (!audioContext) {
+    const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
+    if (AudioCtx) {
+      audioContext = new AudioCtx();
+    }
+  }
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+};
+
 export const getDynamicInstruction = async (gameType: string, target: string, gender: 'm' | 'f' | 'mp' | 'fp' = 'm') => {
-  // Mapeo de artículos correcto para concordancia gramatical
-  const articles = {
-    m: 'el',
-    f: 'la',
-    mp: 'los',
-    fp: 'las'
-  };
-  
+  const articles = { m: 'el', f: 'la', mp: 'los', fp: 'las' };
   const art = articles[gender] || 'el';
   
   const instructions: Record<string, string[]> = {
-    "contar": [
-      `¡Vamos a contar ${target}!`,
-      `¿Me ayudas a contar ${target}?`,
-      `¡Toca cada uno de los ${target}!`,
-      `¡Contemos juntos ${target}!`
-    ],
-    "reconocer partes del rostro": [
-      `¿Dónde están ${art} ${target}?`,
-      `¡Toca ${art} ${target} de Maya!`,
-      `¿Puedes encontrar ${art} ${target}?`,
-      `¡Señala ${art} ${target} de la monita!`
-    ],
-    "shapes": [
-      `¿Dónde está ${art} ${target}?`,
-      `¡Busca ${art} ${target} de colores!`,
-      `¡Toca ${art} ${target} ahora!`,
-      `¿Puedes ver ${art} ${target}?`
-    ],
-    "sizes": [
-      `Toca ${art === 'el' || art === 'los' ? 'el' : 'la'} más ${target}`,
-      `¿Cuál es ${art === 'el' || art === 'los' ? 'el' : 'la'} ${target}?`,
-      `¡Busca el objeto ${target}!`
-    ],
-    "patterns": [
-      `¿Qué sigue ahora?`,
-      `¡Completa el patrón!`,
-      `¿Cuál va en el espacio vacío?`
-    ],
-    "builder": [
-      "¡Vamos a construir!",
-      "Pon las piezas donde quieras.",
-      "¡Haz un dibujo increíble!"
-    ]
+    "contar": [`¡Vamos a contar ${target}!`, `¿Me ayudas a contar ${target}?`, `¡Contemos juntos ${target}!`],
+    "reconocer partes del rostro": [`¿Dónde están ${art} ${target}?`, `¡Toca ${art} ${target} de Maya!`, `¿Puedes encontrar ${art} ${target}?`],
+    "shapes": [`¿Dónde está ${art} ${target}?`, `¡Busca ${art} ${target} de colores!`, `¡Toca ${art} ${target} ahora!`],
+    "sizes": [`Toca ${art === 'el' || art === 'los' ? 'el' : 'la'} más ${target}`, `¿Cuál es ${art === 'el' || art === 'los' ? 'el' : 'la'} ${target}?`],
+    "patterns": [`¿Qué sigue ahora?`, `¡Completa el patrón!`],
+    "builder": ["¡Vamos a construir!", "Pon las piezas donde quieras.", "¡Haz un dibujo increíble!"]
   };
 
   const pool = instructions[gameType] || [`Busca ${target}`];
@@ -51,60 +31,66 @@ export const getDynamicInstruction = async (gameType: string, target: string, ge
 };
 
 export const getEncouragement = async (buddyName: string, action: string) => {
-  const messages = [
-    "¡Lo hiciste genial!",
-    "¡Eres increíble!",
-    "¡Muy bien hecho!",
-    "¡Qué inteligente!",
-    "¡Excelente trabajo!",
-    "¡Me encanta!"
-  ];
+  const messages = ["¡Lo hiciste genial!", "¡Eres increíble!", "¡Muy bien hecho!", "¡Qué inteligente!", "¡Excelente trabajo!"];
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
 export const speakText = (text: string) => {
   if ('speechSynthesis' in window) {
-    // Cancelar cualquier voz en curso para que no se amontonen
     window.speechSynthesis.cancel();
     
-    // Un pequeño retardo ayuda a que los motores de voz móviles (iOS/Android) procesen el cambio
+    // Pequeño retardo para asegurar que el navegador procese la cancelación
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'es-ES';
-      utterance.pitch = 1.3; 
-      utterance.rate = 1.0;
-      utterance.volume = 1.0;
+      utterance.lang = 'es-MX'; // Preferimos español latino para Osiel
+      utterance.pitch = 1.2; 
+      utterance.rate = 0.9;
+      
+      // En algunos navegadores, las voces tardan en cargar
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        // Intentar buscar una voz en español
+        const esVoice = voices.find(v => v.lang.includes('es-MX') || v.lang.includes('es-ES'));
+        if (esVoice) utterance.voice = esVoice;
+      }
+      
       window.speechSynthesis.speak(utterance);
-    }, 100);
+    }, 50);
   }
 };
 
-export type SoundEffectType = 'correct' | 'incorrect' | 'complete' | 'pop';
+export type SoundEffectType = 'correct' | 'incorrect' | 'complete' | 'pop' | 'drag' | 'drop';
 
-// Función para sintetizar sonidos simples sin necesidad de archivos externos
 export const playSoundEffect = (type: SoundEffectType) => {
   try {
-    const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    initAudio();
+    if (!audioContext) return;
     
-    // Reanudar el contexto si está suspendido (requerido en navegadores móviles)
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const now = audioContext.currentTime;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
     
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(audioContext.destination);
 
     if (type === 'pop') {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(800, now);
       osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
       gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0, now + 0.1);
+      osc.start(); osc.stop(now + 0.1);
+    } else if (type === 'drag') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.linearRampToValueAtTime(0, now + 0.05);
+      osc.start(); osc.stop(now + 0.05);
+    } else if (type === 'drop') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.linearRampToValueAtTime(100, now + 0.1);
+      gain.gain.setValueAtTime(0.1, now);
       gain.gain.linearRampToValueAtTime(0, now + 0.1);
       osc.start(); osc.stop(now + 0.1);
     } else if (type === 'correct') {
@@ -123,9 +109,9 @@ export const playSoundEffect = (type: SoundEffectType) => {
       osc.start(); osc.stop(now + 0.3);
     } else if (type === 'complete') {
       [523, 659, 783, 1046].forEach((f, i) => {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
+        const o = audioContext!.createOscillator();
+        const g = audioContext!.createGain();
+        o.connect(g); g.connect(audioContext!.destination);
         o.frequency.value = f;
         g.gain.setValueAtTime(0.1, now + i * 0.1);
         g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);

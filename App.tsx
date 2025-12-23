@@ -10,7 +10,7 @@ import BodyPartsGame from './components/Games/BodyPartsGame.tsx';
 import BuilderGame from './components/Games/BuilderGame.tsx';
 import ColorsGame from './components/Games/ColorsGame.tsx';
 import ParentalControl from './components/ParentalControl.tsx';
-import { speakText, playSoundEffect } from './services/geminiService.ts';
+import { speakText, playSoundEffect, initAudio } from './services/geminiService.ts';
 import { BuddyLevels } from './types.ts';
 
 const App: React.FC = () => {
@@ -34,7 +34,14 @@ const App: React.FC = () => {
     }
   }, [view]);
 
+  const handleStart = () => {
+    initAudio(); // Desbloquea el audio en móviles
+    playSoundEffect('pop');
+    setView('selection');
+  };
+
   const startBuddyAventure = (buddyId: keyof typeof BUDDIES) => {
+    initAudio();
     playSoundEffect('correct');
     setActiveBuddy(buddyId);
     const level = buddyLevels[buddyId];
@@ -80,14 +87,14 @@ const App: React.FC = () => {
 
       <main className="flex-grow w-full flex flex-col items-center justify-start p-2 md:p-4 relative z-20 overflow-y-auto no-scrollbar">
         {view === 'welcome' && (
-          <div onClick={() => setView('selection')} className="text-center cursor-pointer w-full py-12 flex flex-col items-center justify-center min-h-full">
+          <div onClick={handleStart} className="text-center cursor-pointer w-full py-12 flex flex-col items-center justify-center min-h-full">
             <div className="mb-8 relative inline-block animate-float">
               <div className="bg-white p-12 md:p-16 rounded-full inline-block shadow-2xl relative border-8 border-blue-100">
                 <Baby className="w-24 h-24 md:w-40 md:h-40 text-blue-500" />
                 <Sparkles className="absolute -top-4 -right-4 w-12 h-12 text-yellow-400 animate-pulse" />
               </div>
             </div>
-            <h1 className="text-6xl md:text-8xl text-blue-600 font-kids mb-6 drop-shadow-lg">OSIEL</h1>
+            <h1 className="text-6xl md:text-8xl text-blue-600 font-kids mb-6 drop-shadow-lg uppercase tracking-tighter">OSIEL</h1>
             <div className="inline-block bg-white/80 px-8 py-3 rounded-full shadow-md animate-pulse-gentle">
               <p className="text-xl md:text-2xl text-blue-500 font-kids uppercase">Toca para jugar</p>
             </div>
