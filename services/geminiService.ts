@@ -18,42 +18,51 @@ const loadVoice = () => {
   }
 };
 
-// Escuchar cuando las voces cambian (común en móviles tras el primer toque)
+// Escuchar cuando las voces cambian
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = loadVoice;
   loadVoice();
 }
 
 /**
- * Desbloquea el audio en dispositivos móviles.
- * Debe ser llamado dentro de un evento de usuario (onClick/onTouch).
+ * Desbloquea el audio en dispositivos móviles (APK/WebView).
+ * DEBE llamarse directamente en el evento onClick/onTouchStart.
  */
 export const initAudio = () => {
   if (isAudioUnlocked) return;
 
-  // 1. Desbloquear AudioContext (Sonidos)
-  if (!audioContext) {
+  try {
+    // 1. Desbloquear AudioContext (Sonidos)
     const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
     if (AudioCtx) {
       audioContext = new AudioCtx();
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      // Emitir un micro-sonido para validar el contexto ante el SO
+      const osc = audioContext.createOscillator();
+      const g = audioContext.createGain();
+      g.gain.value = 0.001;
+      osc.connect(g);
+      g.connect(audioContext.destination);
+      osc.start(0);
+      osc.stop(0.01);
     }
-  }
-  
-  if (audioContext && audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
 
-  // 2. Desbloquear SpeechSynthesis (Voz)
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    // Enviar una locución vacía inmediata dentro del evento de usuario
-    const utter = new SpeechSynthesisUtterance("");
-    utter.volume = 0; // Silencioso
-    window.speechSynthesis.speak(utter);
-    loadVoice();
+    // 2. Desbloquear SpeechSynthesis (Voz)
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(" ");
+      utter.volume = 0;
+      window.speechSynthesis.speak(utter);
+      loadVoice();
+    }
+    
+    isAudioUnlocked = true;
+    console.log("Audio desbloqueado correctamente");
+  } catch (e) {
+    console.error("Fallo al desbloquear audio:", e);
   }
-  
-  isAudioUnlocked = true;
 };
 
 export const getDynamicInstruction = async (gameType: string, target: string, gender: 'm' | 'f' | 'mp' | 'fp' = 'm') => {
@@ -78,40 +87,38 @@ export const getEncouragement = async (buddyName: string, action: string) => {
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
+/**
+ * Reproduce texto a voz.
+ * CRÍTICO: En WebViews, llamar esto fuera de un tick de usuario puede causar 'not-allowed'.
+ */
 export const speakText = (text: string) => {
   if (!('speechSynthesis' in window)) return;
   
-  // Si el audio no ha sido desbloqueado por el usuario, no intentamos hablar
-  // para evitar el error 'not-allowed' en la consola.
-  if (!isAudioUnlocked && typeof window !== 'undefined') {
-    console.warn("Intento de hablar antes de desbloquear el audio del usuario.");
-    return;
+  // Si no está desbloqueado, intentamos forzar un inicio (aunque puede fallar si no es un evento de usuario directo)
+  if (!isAudioUnlocked) {
+    initAudio();
   }
 
+  // Cancelar inmediatamente cualquier discurso previo
   window.speechSynthesis.cancel();
   
-  const runSpeak = () => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-MX';
-    utterance.pitch = 1.1; 
-    utterance.rate = 1.0;
-    
-    if (!selectedVoice) loadVoice();
-    if (selectedVoice) utterance.voice = selectedVoice;
-    
-    utterance.onerror = (e: any) => {
-      // 'interrupted' es normal cuando cancelamos. 
-      // 'not-allowed' ocurre si el navegador bloquea la reproducción.
-      if (e.error !== 'interrupted' && e.error !== 'not-allowed') {
-        console.error("Error en SpeechSynthesis:", e.error);
-      }
-    };
-    
-    window.speechSynthesis.speak(utterance);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'es-MX';
+  utterance.pitch = 1.1; 
+  utterance.rate = 1.0;
+  
+  if (!selectedVoice) loadVoice();
+  if (selectedVoice) utterance.voice = selectedVoice;
+  
+  utterance.onerror = (e: any) => {
+    // Silenciamos los errores comunes de políticas de navegador para no ensuciar la consola del APK
+    if (e.error !== 'interrupted' && e.error !== 'not-allowed') {
+      console.error("Error SpeechSynthesis:", e.error);
+    }
   };
-
-  // Un pequeño retardo ayuda a que el motor procese el 'cancel'
-  setTimeout(runSpeak, 50);
+  
+  // Ejecutamos SIN setTimeout para no perder la "User Activation" en WebViews estrictos
+  window.speechSynthesis.speak(utterance);
 };
 
 export type SoundEffectType = 'correct' | 'incorrect' | 'complete' | 'pop' | 'drag' | 'drop';
@@ -121,6 +128,11 @@ export const playSoundEffect = (type: SoundEffectType) => {
     if (!audioContext) initAudio();
     if (!audioContext) return;
     
+    // Si el contexto se suspendió por inactividad, intentar resumirlo
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
     const now = audioContext.currentTime;
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();

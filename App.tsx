@@ -22,15 +22,16 @@ const App: React.FC = () => {
     toby: 1, lila: 1, payasin: 1, gogo: 1, pipo: 1, maya: 1, bruno: 1
   });
 
-  // CRÍTICO: No llamamos a speakText en useEffect al inicio porque fallará en móviles
-  // El audio se desbloquea en handleStart tras el primer toque.
-
   const handleStart = () => {
-    initAudio(); // Desbloqueo inmediato en evento de usuario
+    // 1. Ejecutar desbloqueo inmediatamente (Síncrono)
+    initAudio(); 
+    
+    // 2. Ejecutar sonido y voz inmediatamente para "marcar" la interacción
     playSoundEffect('pop');
-    setView('selection');
-    // Saludo después del desbloqueo
     speakText("¡Hola! Soy Osiel. ¿Con quién quieres jugar hoy?");
+    
+    // 3. Cambiar vista
+    setView('selection');
   };
 
   const startBuddyAventure = (buddyId: keyof typeof BUDDIES) => {
