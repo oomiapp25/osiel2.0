@@ -3,58 +3,64 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Osiel - Matemáticas para Niños</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --app-height: 100dvh;
+        }
         body {
             font-family: 'Quicksand', sans-serif;
-            overflow: hidden;
+            height: var(--app-height);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
             touch-action: manipulation;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         h1, h2, h3, .font-kids {
             font-family: 'Fredoka One', cursive;
         }
-        .bubble {
-            border-radius: 50%;
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .scroll-container {
+            height: var(--app-height);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
-        .bubble:active {
-            transform: scale(0.9);
+        @keyframes pop-in {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .animate-wiggle {
+            animation: wiggle 0.4s ease-in-out infinite;
         }
         @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-        }
-        @keyframes float-slow {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(5px, 10px); }
-            100% { transform: translate(0, 0); }
-        }
-        .animate-float-slow {
-            animation: float-slow 4s ease-in-out infinite;
-        }
-        .float-animation {
-            animation: float 4s ease-in-out infinite;
-        }
-        @keyframes spin-slow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin-slow {
-            animation: spin-slow 15s linear infinite;
-        }
-        @keyframes letter-bounce {
-            0%, 100% { transform: translateY(0); }
+            0%, 100% { transform: translateY(0px); }
             50% { transform: translateY(-15px); }
         }
-        .letter-animate {
-            display: inline-block;
-            animation: letter-bounce 2s ease-in-out infinite;
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
         }
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .animate-pulse-gentle {
+            animation: pulse-gentle 2s ease-in-out infinite;
+        }
+        /* Ocultar scrollbar pero mantener funcionalidad */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <script type="importmap">
 {

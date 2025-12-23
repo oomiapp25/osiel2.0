@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MousePointer2, Flower, Snowflake, PawPrint, Laugh } from 'lucide-react';
+import { MousePointer2, Flower, Snowflake, PawPrint, Laugh, Hammer, Palette } from 'lucide-react';
 
 export const BUDDIES = {
   toby: {
@@ -20,6 +20,15 @@ export const BUDDIES = {
     icon: <Flower className="w-12 h-12 text-pink-500" />,
     themeColor: 'pink',
     teach: 'shapes'
+  },
+  payasin: {
+    id: 'payasin',
+    name: 'Payasín',
+    description: '¡Diviértete con los colores!',
+    color: 'bg-red-50',
+    icon: <Palette className="w-12 h-12 text-red-500" />,
+    themeColor: 'red',
+    teach: 'colors'
   },
   maya: {
     id: 'maya',
@@ -47,6 +56,15 @@ export const BUDDIES = {
     icon: <Snowflake className="w-12 h-12 text-blue-500" />,
     themeColor: 'blue',
     teach: 'patterns'
+  },
+  bruno: {
+    id: 'bruno',
+    name: 'Bruno el Castor',
+    description: '¡Vamos a construir cosas divertidas!',
+    color: 'bg-orange-100',
+    icon: <Hammer className="w-12 h-12 text-orange-600" />,
+    themeColor: 'orange',
+    teach: 'builder'
   }
 };
 

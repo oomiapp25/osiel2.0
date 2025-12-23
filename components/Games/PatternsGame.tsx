@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getEncouragement, speakText, playSoundEffect } from '../../services/geminiService';
+import { getEncouragement, speakText, playSoundEffect, getDynamicInstruction } from '../../services/geminiService.ts';
 import confetti from 'https://cdn.skypack.dev/canvas-confetti';
 import { Fish, Snowflake, Shell, Waves, Sparkles } from 'lucide-react';
 
@@ -31,7 +31,7 @@ const PatternsGame: React.FC<PatternsGameProps> = ({ level, onComplete }) => {
   const [feedback, setFeedback] = useState("");
   const [round, setRound] = useState(1);
   const [isFinished, setIsFinished] = useState(false);
-  const totalRounds = 3;
+  const totalRounds = level < 5 ? 2 : 3;
 
   useEffect(() => {
     setIsFinished(false);
@@ -39,7 +39,7 @@ const PatternsGame: React.FC<PatternsGameProps> = ({ level, onComplete }) => {
     startRound();
   }, [level]);
 
-  const startRound = () => {
+  const startRound = async () => {
     const shuffledPool = [...POOL].sort(() => 0.5 - Math.random());
     
     let newSequence: PatternItem[] = [];
@@ -64,7 +64,7 @@ const PatternsGame: React.FC<PatternsGameProps> = ({ level, onComplete }) => {
     const otherOptions = POOL.filter(p => p.id !== correctTarget.id).sort(() => 0.5 - Math.random()).slice(0, 2);
     setOptions([correctTarget, ...otherOptions].sort(() => 0.5 - Math.random()));
     
-    const instruction = "¿Qué sigue?";
+    const instruction = await getDynamicInstruction("patterns", "patrón", "m");
     setFeedback(instruction);
     speakText(instruction);
   };
@@ -77,72 +77,67 @@ const PatternsGame: React.FC<PatternsGameProps> = ({ level, onComplete }) => {
       if (round >= totalRounds) {
         setIsFinished(true);
         playSoundEffect('complete');
-        confetti();
-        const msg = await getEncouragement("Pipo el Pingüino", `patrones completados en nivel ${level}`);
+        confetti({ particleCount: 150, origin: { y: 0.6 } });
+        const msg = await getEncouragement("Pipo el Pingüino", `patrones completados`);
         setFeedback(msg);
         speakText(msg);
       } else {
-        speakText("¡Súper! Sigue así.");
+        speakText("¡Muy bien!");
         setRound(prev => prev + 1);
-        startRound();
+        setTimeout(startRound, 1200);
       }
     } else {
       playSoundEffect('incorrect');
-      speakText("¡Casi! Mira bien el patrón.");
+      speakText("¡Uy! Ese no sigue el patrón.");
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full p-4 md:p-8 text-center bg-blue-50/50 relative overflow-hidden">
-      <Snowflake className="absolute top-4 left-4 w-6 h-6 md:w-8 md:h-8 text-blue-200 animate-spin-slow opacity-50" />
-      <Snowflake className="absolute bottom-4 right-4 w-10 h-10 md:w-12 md:h-12 text-blue-200 animate-bounce opacity-50" />
-
-      <h2 className="text-2xl md:text-3xl font-kids text-blue-700 mb-6 md:mb-10 h-12 md:h-16 flex items-center px-4">
+    <div className="flex flex-col items-center justify-center min-h-full p-4 md:p-8 text-center bg-blue-50/30">
+      <h2 className="text-2xl md:text-3xl font-kids text-blue-700 mb-8 h-12 flex items-center animate-pulse-gentle">
         {feedback}
       </h2>
       
       {!isFinished ? (
-        <>
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mb-10 md:mb-16 bg-white/60 p-5 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-inner border-4 border-white w-full max-w-3xl">
+        <div className="w-full flex flex-col items-center gap-12">
+          <div className="flex flex-wrap items-center justify-center gap-4 bg-white/60 p-6 rounded-[3rem] shadow-inner border-4 border-white animate-pop-in">
             {sequence.map((item, i) => (
-              <div key={i} className={`w-14 h-14 md:w-20 md:h-20 ${item.color} transform transition-all`}>
+              <div key={i} className={`w-14 h-14 md:w-20 md:h-20 ${item.color} animate-float stagger-${i+1}`}>
                 {item.icon}
               </div>
             ))}
-            <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl border-4 border-dashed border-blue-300 bg-blue-100/50 flex items-center justify-center shadow-inner">
-              <span className="text-2xl md:text-4xl text-blue-400 font-kids animate-pulse">?</span>
+            <div className="w-16 h-16 md:w-24 md:h-24 rounded-3xl border-4 border-dashed border-blue-300 bg-blue-100/50 flex items-center justify-center animate-pulse-gentle">
+              <span className="text-3xl text-blue-400 font-kids">?</span>
             </div>
           </div>
 
           <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-            {options.map((option) => (
+            {options.map((option, i) => (
               <button
                 key={option.id}
-                onClick={() => handleSelect(option)}
-                className="group bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] shadow-xl hover:scale-110 active:scale-95 transition-all border-b-8 border-gray-100 hover:border-blue-200 w-24 h-24 md:w-36 md:h-36 flex items-center justify-center"
+                onClick={() => { playSoundEffect('pop'); handleSelect(option); }}
+                className="group bg-white p-5 rounded-[2.5rem] shadow-xl hover:scale-110 active:scale-95 transition-all border-b-8 border-gray-100 w-24 h-24 md:w-36 md:h-36 flex items-center justify-center animate-pop-in"
+                style={{ animationDelay: `${i * 0.15}s` }}
               >
-                <div className={`${option.color} w-14 h-14 md:w-24 md:h-24 group-hover:animate-bounce`}>
+                <div className={`${option.color} w-16 h-16 md:w-24 md:h-24`}>
                   {option.icon}
                 </div>
               </button>
             ))}
           </div>
-        </>
+        </div>
       ) : (
         <button
           onClick={onComplete}
           className="bg-blue-500 text-white px-10 py-5 rounded-3xl text-2xl font-kids shadow-lg hover:bg-blue-600 active:translate-y-2 transition-all border-b-8 border-blue-700 flex items-center gap-3 animate-bounce"
         >
-          <Sparkles /> ¡SIGUIENTE! <Sparkles />
+          <Sparkles /> ¡SIGUIENTE!
         </button>
       )}
 
-      <div className="mt-10 md:mt-16 flex gap-3">
+      <div className="mt-12 flex gap-3">
         {Array.from({ length: totalRounds }).map((_, i) => (
-          <div 
-            key={i} 
-            className={`w-4 h-4 rounded-full transition-all duration-500 border border-white/50 ${i < round ? 'bg-blue-500 shadow-sm' : 'bg-gray-200'}`}
-          />
+          <div key={i} className={`w-5 h-5 rounded-full transition-all duration-500 ${i < round ? 'bg-blue-500 scale-125' : 'bg-gray-200'}`} />
         ))}
       </div>
     </div>

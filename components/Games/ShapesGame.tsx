@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { getEncouragement, speakText, playSoundEffect } from '../../services/geminiService';
+import { getEncouragement, speakText, playSoundEffect, getDynamicInstruction } from '../../services/geminiService.ts';
 import confetti from 'https://cdn.skypack.dev/canvas-confetti';
 import { Square, Circle, Triangle, Heart, Star, Hexagon, Sparkles } from 'lucide-react';
 
@@ -10,12 +10,12 @@ interface ShapesGameProps {
 }
 
 const ALL_SHAPES = [
-  { id: 'circle', icon: <Circle className="w-12 h-12" />, name: 'Círculo' },
-  { id: 'square', icon: <Square className="w-12 h-12" />, name: 'Cuadrado' },
-  { id: 'triangle', icon: <Triangle className="w-12 h-12" />, name: 'Triángulo' },
-  { id: 'heart', icon: <Heart className="w-12 h-12" />, name: 'Corazón' },
-  { id: 'star', icon: <Star className="w-12 h-12" />, name: 'Estrella' },
-  { id: 'hexagon', icon: <Hexagon className="w-12 h-12" />, name: 'Hexágono' },
+  { id: 'circle', icon: <Circle className="w-12 h-12" />, name: 'círculo', gender: 'm' as const },
+  { id: 'square', icon: <Square className="w-12 h-12" />, name: 'cuadrado', gender: 'm' as const },
+  { id: 'triangle', icon: <Triangle className="w-12 h-12" />, name: 'triángulo', gender: 'm' as const },
+  { id: 'heart', icon: <Heart className="w-12 h-12" />, name: 'corazón', gender: 'm' as const },
+  { id: 'star', icon: <Star className="w-12 h-12" />, name: 'estrella', gender: 'f' as const },
+  { id: 'hexagon', icon: <Hexagon className="w-12 h-12" />, name: 'hexágono', gender: 'm' as const },
 ];
 
 const COLORS = [
@@ -42,13 +42,15 @@ const ShapesGame: React.FC<ShapesGameProps> = ({ level, onComplete }) => {
     }));
     
     const randomTarget = selectedOptions[Math.floor(Math.random() * selectedOptions.length)];
-    
     setOptions(selectedOptions);
     setTarget(randomTarget);
     
-    const instruction = `¿Dónde está el ${randomTarget.name}?`;
-    setFeedback(instruction);
-    speakText(instruction);
+    const init = async () => {
+      const instruction = await getDynamicInstruction("shapes", randomTarget.name, randomTarget.gender);
+      setFeedback(instruction);
+      speakText(instruction);
+    };
+    init();
   }, [level]);
 
   const handleSelect = async (shapeId: string) => {
@@ -57,14 +59,14 @@ const ShapesGame: React.FC<ShapesGameProps> = ({ level, onComplete }) => {
     if (shapeId === target.id) {
       setIsFinished(true);
       playSoundEffect('correct');
-      confetti();
-      const msg = await getEncouragement("Lila la Mariposa", `encontrado el ${target.name} en el nivel ${level}`);
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      const msg = await getEncouragement("Lila la Mariposa", `encontrado el objeto`);
       setFeedback(msg);
       speakText(msg);
       playSoundEffect('complete');
     } else {
       playSoundEffect('incorrect');
-      speakText("¡Inténtalo otra vez! Busca el " + target.name);
+      speakText("¡Ese no es!");
     }
   };
 
@@ -72,27 +74,30 @@ const ShapesGame: React.FC<ShapesGameProps> = ({ level, onComplete }) => {
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 text-center bg-pink-50/20">
-      <h2 className="text-2xl md:text-3xl font-kids text-pink-600 mb-12 px-4 h-16 flex items-center justify-center">
+      <h2 className="text-3xl md:text-4xl font-kids text-pink-600 mb-12 px-4 h-20 flex items-center justify-center animate-pulse-gentle">
         {feedback}
       </h2>
       
       {!isFinished ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-          {options.map((shape) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {options.map((shape, i) => (
             <button
               key={shape.id}
               onClick={() => handleSelect(shape.id)}
-              className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-3xl flex flex-col items-center justify-center gap-4 shadow-xl border-b-8 border-gray-100 hover:border-pink-200 active:translate-y-2 transition-all transform hover:scale-105"
+              className={`w-32 h-32 md:w-44 md:h-44 bg-white rounded-[2.5rem] flex flex-col items-center justify-center gap-4 shadow-xl border-b-8 border-gray-100 hover:border-pink-300 active:scale-90 transition-all transform animate-pop-in stagger-${i+1}`}
+              style={{ animationDelay: `${i * 0.1}s` }}
             >
-              <div className={shape.color}>{shape.icon}</div>
-              <span className="font-kids text-sm text-gray-500">{shape.name}</span>
+              <div className={`${shape.color} ${shape.id === target.id ? 'animate-wiggle' : ''}`}>
+                {shape.icon}
+              </div>
+              <span className="font-kids text-xs text-gray-400 uppercase tracking-widest">{shape.name}</span>
             </button>
           ))}
         </div>
       ) : (
         <button
           onClick={onComplete}
-          className="bg-pink-500 text-white px-10 py-5 rounded-3xl text-2xl font-kids shadow-lg hover:bg-pink-600 active:translate-y-2 transition-all border-b-8 border-pink-700 flex items-center gap-3 animate-bounce"
+          className="bg-pink-500 text-white px-12 py-6 rounded-full text-3xl font-kids shadow-2xl hover:bg-pink-600 active:translate-y-2 transition-all border-b-8 border-pink-700 flex items-center gap-4 animate-bounce"
         >
           <Sparkles /> ¡SIGUIENTE! <Sparkles />
         </button>
