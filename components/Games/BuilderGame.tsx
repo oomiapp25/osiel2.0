@@ -21,11 +21,20 @@ interface PlacedPart {
   name: string;
 }
 
+interface BlueprintPart {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  renderType: PlacedPart['renderType'];
+  rotation?: number;
+}
+
 type TemplateType = 'house' | 'snowman' | 'clown' | 'car' | 'train' | 'rocket' | 'cat';
 
 const TEMPLATE_SEQUENCE: TemplateType[] = ['house', 'snowman', 'clown', 'car', 'train', 'rocket', 'cat'];
 
-const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], bg: string, prompt: string }> = {
+const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], blueprint: BlueprintPart[], bg: string, prompt: string }> = {
   house: {
     name: 'Casita',
     icon: <Home />,
@@ -36,6 +45,12 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'roof', name: 'Techo', color: 'bg-red-500', renderType: 'triangle', w: 160, h: 80 },
       { type: 'door', name: 'Puerta', color: 'bg-amber-800', renderType: 'door', w: 45, h: 70 },
       { type: 'window', name: 'Ventana', color: 'bg-sky-200', renderType: 'window', w: 45, h: 45 },
+    ],
+    blueprint: [
+      { x: 50, y: 60, w: 140, h: 100, renderType: 'rect' },
+      { x: 50, y: 35, w: 160, h: 80, renderType: 'triangle' },
+      { x: 50, y: 68, w: 45, h: 70, renderType: 'door' },
+      { x: 70, y: 55, w: 40, h: 40, renderType: 'window' },
     ]
   },
   snowman: {
@@ -49,6 +64,13 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'head', name: 'Cabeza', color: 'bg-slate-50', renderType: 'circle', w: 75, h: 75 },
       { type: 'nose', name: 'Nariz', color: 'bg-orange-500', renderType: 'triangle', w: 18, h: 30 },
       { type: 'hat', name: 'Sombrero', color: 'bg-zinc-800', renderType: 'rect', w: 65, h: 45 },
+    ],
+    blueprint: [
+      { x: 50, y: 75, w: 130, h: 130, renderType: 'circle' },
+      { x: 50, y: 55, w: 95, h: 95, renderType: 'circle' },
+      { x: 50, y: 38, w: 75, h: 75, renderType: 'circle' },
+      { x: 50, y: 38, w: 15, h: 25, renderType: 'triangle' },
+      { x: 50, y: 22, w: 60, h: 40, renderType: 'rect' },
     ]
   },
   clown: {
@@ -63,6 +85,15 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'hat', name: 'Gorro', color: 'bg-yellow-400', renderType: 'triangle', w: 110, h: 120 },
       { type: 'pom-pom', name: 'Pompón', color: 'bg-white', renderType: 'pom-pom', w: 25, h: 25 },
       { type: 'bowtie', name: 'Moño', color: 'bg-purple-500', renderType: 'rect', w: 100, h: 40 },
+    ],
+    blueprint: [
+      { x: 50, y: 55, w: 140, h: 140, renderType: 'circle' },
+      { x: 40, y: 50, w: 20, h: 20, renderType: 'eye' },
+      { x: 60, y: 50, w: 20, h: 20, renderType: 'eye' },
+      { x: 50, y: 60, w: 30, h: 30, renderType: 'circle' },
+      { x: 50, y: 30, w: 110, h: 120, renderType: 'triangle' },
+      { x: 50, y: 18, w: 25, h: 25, renderType: 'circle' },
+      { x: 50, y: 80, w: 100, h: 40, renderType: 'rect' },
     ]
   },
   car: {
@@ -75,6 +106,12 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'cabin', name: 'Cabina', color: 'bg-red-400', renderType: 'rect', w: 100, h: 45 },
       { type: 'window', name: 'Vidrio', color: 'bg-sky-100', renderType: 'rect', w: 70, h: 30 },
       { type: 'wheel', name: 'Rueda', color: 'bg-zinc-900', renderType: 'wheel', w: 50, h: 50 },
+    ],
+    blueprint: [
+      { x: 50, y: 60, w: 170, h: 65, renderType: 'rect' },
+      { x: 50, y: 45, w: 100, h: 45, renderType: 'rect' },
+      { x: 35, y: 75, w: 50, h: 50, renderType: 'wheel' },
+      { x: 65, y: 75, w: 50, h: 50, renderType: 'wheel' },
     ]
   },
   train: {
@@ -87,6 +124,13 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'chimney', name: 'Chimenea', color: 'bg-zinc-700', renderType: 'rect', w: 30, h: 45 },
       { type: 'wheel', name: 'Rueda Grande', color: 'bg-zinc-900', renderType: 'wheel', w: 45, h: 45 },
       { type: 'cabin', name: 'Cabina', color: 'bg-green-500', renderType: 'rect', w: 60, h: 60 },
+    ],
+    blueprint: [
+      { x: 45, y: 65, w: 130, h: 90, renderType: 'rect' },
+      { x: 35, y: 45, w: 30, h: 45, renderType: 'rect' },
+      { x: 40, y: 80, w: 45, h: 45, renderType: 'wheel' },
+      { x: 60, y: 80, w: 45, h: 45, renderType: 'wheel' },
+      { x: 65, y: 55, w: 60, h: 60, renderType: 'rect' },
     ]
   },
   rocket: {
@@ -99,6 +143,13 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'nosecone', name: 'Punta', color: 'bg-red-600', renderType: 'triangle', w: 70, h: 75 },
       { type: 'fin', name: 'Aleta', color: 'bg-red-500', renderType: 'fin', w: 45, h: 50 },
       { type: 'window', name: 'Ventanilla', color: 'bg-sky-200', renderType: 'circle', w: 35, h: 35 },
+    ],
+    blueprint: [
+      { x: 50, y: 60, w: 70, h: 160, renderType: 'rect' },
+      { x: 50, y: 25, w: 70, h: 75, renderType: 'triangle' },
+      { x: 40, y: 75, w: 45, h: 50, renderType: 'fin', rotation: 180 },
+      { x: 60, y: 75, w: 45, h: 50, renderType: 'fin' },
+      { x: 50, y: 55, w: 35, h: 35, renderType: 'circle' },
     ]
   },
   cat: {
@@ -114,108 +165,133 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'tail', name: 'Cola', color: 'bg-orange-400', renderType: 'tail', w: 25, h: 80 },
       { type: 'whiskers', name: 'Bigotes', color: 'text-zinc-400', renderType: 'whiskers', w: 60, h: 30 },
       { type: 'mouth', name: 'Boca', color: 'text-pink-400', renderType: 'cat-mouth', w: 35, h: 20 },
+    ],
+    blueprint: [
+      { x: 50, y: 70, w: 120, h: 120, renderType: 'circle' },
+      { x: 50, y: 40, w: 90, h: 90, renderType: 'circle' },
+      { x: 40, y: 30, w: 30, h: 30, renderType: 'triangle' },
+      { x: 60, y: 30, w: 30, h: 30, renderType: 'triangle' },
+      { x: 40, y: 40, w: 14, h: 14, renderType: 'eye' },
+      { x: 60, y: 40, w: 14, h: 14, renderType: 'eye' },
+      { x: 50, y: 48, w: 35, h: 20, renderType: 'cat-mouth' },
+      { x: 68, y: 65, w: 25, h: 80, renderType: 'tail' },
     ]
   }
 };
 
-const ShapeRenderer: React.FC<{ part: PlacedPart, active?: boolean }> = ({ part, active }) => {
-  const style = { width: `${part.width}px`, height: `${part.height}px` };
-  const commonClasses = `border-4 border-black/10 shadow-lg relative overflow-hidden ${active ? 'ring-4 ring-yellow-400 scale-110 shadow-2xl' : ''}`;
+const ShapeRenderer: React.FC<{ part: PlacedPart | any, active?: boolean, isGhost?: boolean }> = ({ part, active, isGhost }) => {
+  const style = { 
+    width: `${part.width || part.w}px`, 
+    height: `${part.height || part.h}px`,
+    opacity: isGhost ? 0.25 : 1,
+  };
   
-  // Capa de brillo para que parezca 3D/Plástico
-  const GlossyOverlay = () => (
+  const commonClasses = isGhost 
+    ? `border-4 border-dashed border-gray-400 bg-transparent relative overflow-hidden`
+    : `border-4 border-black/10 shadow-lg relative overflow-hidden ${active ? 'ring-4 ring-yellow-400 scale-110 shadow-2xl' : ''}`;
+  
+  const GlossyOverlay = () => isGhost ? null : (
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/30 to-transparent opacity-60" />
   );
 
   switch (part.renderType) {
     case 'triangle':
       return (
-        <div className="relative" style={{ filter: active ? 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.8))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))' }}>
+        <div className="relative" style={{ filter: active ? 'drop-shadow(0 0 10px rgba(250, 204, 21, 0.8))' : 'none' }}>
           <div 
             style={{
               width: 0, height: 0,
-              borderLeft: `${part.width / 2}px solid transparent`,
-              borderRight: `${part.width / 2}px solid transparent`,
-              borderBottom: `${part.height}px solid currentColor`,
-              borderRadius: '8px'
+              borderLeft: `${(part.width || part.w) / 2}px solid transparent`,
+              borderRight: `${(part.width || part.w) / 2}px solid transparent`,
+              borderBottom: `${(part.height || part.h)}px solid ${isGhost ? '#cbd5e1' : 'currentColor'}`,
+              borderRadius: '8px',
+              borderStyle: isGhost ? 'dashed' : 'solid'
             }}
-            className={part.color.replace('bg-', 'text-')}
+            className={isGhost ? '' : (part.color || '').replace('bg-', 'text-')}
           />
         </div>
       );
     case 'circle': 
       return (
-        <div style={style} className={`${part.color} rounded-full ${commonClasses}`}>
+        <div style={style} className={`${isGhost ? 'rounded-full border-4 border-dashed border-gray-300' : `${part.color} rounded-full ${commonClasses}`}`}>
           <GlossyOverlay />
         </div>
       );
     case 'wheel': 
       return (
-        <div style={style} className={`bg-zinc-900 rounded-full border-4 border-zinc-700 shadow-md relative flex items-center justify-center ${active ? 'scale-110' : ''}`}>
-          <div className="w-1/2 h-1/2 bg-zinc-600 rounded-full border-2 border-zinc-400 flex items-center justify-center">
-             <div className="w-1/3 h-1/3 bg-zinc-800 rounded-full" />
-          </div>
+        <div style={style} className={`${isGhost ? 'rounded-full border-4 border-dashed border-gray-300' : `bg-zinc-900 rounded-full border-4 border-zinc-700 shadow-md relative flex items-center justify-center ${active ? 'scale-110' : ''}`}`}>
+          {!isGhost && (
+            <div className="w-1/2 h-1/2 bg-zinc-600 rounded-full border-2 border-zinc-400 flex items-center justify-center">
+               <div className="w-1/3 h-1/3 bg-zinc-800 rounded-full" />
+            </div>
+          )}
           <GlossyOverlay />
         </div>
       );
     case 'eye': 
       return (
-        <div style={style} className={`bg-white rounded-full border-2 border-black/20 flex items-center justify-center overflow-hidden shadow-inner`}>
-          <div className="w-3/5 h-3/5 bg-black rounded-full relative">
-            <div className="absolute top-1 left-1 w-1 h-1 bg-white rounded-full opacity-80" />
-          </div>
+        <div style={style} className={`${isGhost ? 'rounded-full border-2 border-dashed border-gray-300' : `bg-white rounded-full border-2 border-black/20 flex items-center justify-center overflow-hidden shadow-inner`}`}>
+          {!isGhost && (
+            <div className="w-3/5 h-3/5 bg-black rounded-full relative">
+              <div className="absolute top-1 left-1 w-1 h-1 bg-white rounded-full opacity-80" />
+            </div>
+          )}
         </div>
       );
     case 'door': 
       return (
-        <div style={style} className={`${part.color} ${commonClasses} rounded-t-2xl`}>
-          <div className="absolute right-2 top-1/2 w-3 h-3 bg-yellow-400 rounded-full border-2 border-black/20 shadow-sm" />
+        <div style={style} className={`${isGhost ? 'border-4 border-dashed border-gray-300 rounded-t-2xl' : `${part.color} ${commonClasses} rounded-t-2xl`}`}>
+          {!isGhost && <div className="absolute right-2 top-1/2 w-3 h-3 bg-yellow-400 rounded-full border-2 border-black/20 shadow-sm" />}
           <GlossyOverlay />
         </div>
       );
     case 'window': 
       return (
-        <div style={style} className={`${part.color} border-4 border-white/80 rounded-xl grid grid-cols-2 grid-rows-2 shadow-lg`}>
-          <div className="border border-white/40" /><div className="border border-white/40" />
-          <div className="border border-white/40" /><div className="border border-white/40" />
+        <div style={style} className={`${isGhost ? 'border-4 border-dashed border-gray-300 rounded-xl' : `${part.color} border-4 border-white/80 rounded-xl grid grid-cols-2 grid-rows-2 shadow-lg`}`}>
+          {!isGhost && (
+            <>
+              <div className="border border-white/40" /><div className="border border-white/40" />
+              <div className="border border-white/40" /><div className="border border-white/40" />
+            </>
+          )}
           <GlossyOverlay />
         </div>
       );
     case 'whiskers':
       return (
         <div style={style} className="flex flex-col justify-center items-center gap-3">
-          <div className="w-full h-[3px] bg-zinc-400/80 rounded-full rotate-2" />
-          <div className="w-full h-[3px] bg-zinc-400/80 rounded-full -rotate-1" />
-          <div className="w-full h-[3px] bg-zinc-400/80 rounded-full -rotate-3" />
+          <div className={`w-full h-[3px] ${isGhost ? 'bg-gray-300' : 'bg-zinc-400/80'} rounded-full rotate-2`} />
+          <div className={`w-full h-[3px] ${isGhost ? 'bg-gray-300' : 'bg-zinc-400/80'} rounded-full -rotate-1`} />
+          <div className={`w-full h-[3px] ${isGhost ? 'bg-gray-300' : 'bg-zinc-400/80'} rounded-full -rotate-3`} />
         </div>
       );
     case 'cat-mouth':
       return (
         <svg viewBox="0 0 35 20" style={style}>
-          <path d="M5,5 Q12,18 17.5,5 Q23,18 30,5" fill="none" stroke="#F472B6" strokeWidth="4" strokeLinecap="round" />
+          <path d="M5,5 Q12,18 17.5,5 Q23,18 30,5" fill="none" stroke={isGhost ? "#cbd5e1" : "#F472B6"} strokeWidth="4" strokeLinecap="round" strokeDasharray={isGhost ? "4 2" : "none"} />
         </svg>
       );
     case 'tail':
       return (
-        <div style={{ ...style, borderRadius: '40px 40px 10px 10px', transform: 'rotate(15deg)' }} className={`${part.color} border-4 border-black/5 shadow-inner relative`}>
+        <div style={{ ...style, borderRadius: '40px 40px 10px 10px', transform: 'rotate(15deg)', borderStyle: isGhost ? 'dashed' : 'solid', borderColor: isGhost ? '#cbd5e1' : 'rgba(0,0,0,0.05)' }} className={`${isGhost ? 'border-4' : `${part.color} border-4 shadow-inner relative`}`}>
           <GlossyOverlay />
         </div>
       );
     case 'pom-pom':
       return (
-        <div style={style} className={`bg-white rounded-full border-2 border-zinc-200 shadow-md ${active ? 'scale-110' : ''}`}>
-           <div className="absolute inset-0 border-4 border-white/30 rounded-full blur-[1px]" />
+        <div style={style} className={`${isGhost ? 'rounded-full border-2 border-dashed border-gray-300' : `bg-white rounded-full border-2 border-zinc-200 shadow-md`}`}>
+           {!isGhost && <div className="absolute inset-0 border-4 border-white/30 rounded-full blur-[1px]" />}
         </div>
       );
     case 'fin':
       return (
-        <div style={{ ...style, clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} className={`${part.color} shadow-lg relative`}>
+        <div style={{ ...style, clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} className={`${isGhost ? 'bg-gray-200 opacity-20' : `${part.color} shadow-lg relative`}`}>
           <GlossyOverlay />
         </div>
       );
     default: 
       return (
-        <div style={style} className={`${part.color} rounded-2xl ${commonClasses}`}>
+        <div style={style} className={`${isGhost ? 'border-4 border-dashed border-gray-300 rounded-2xl' : `${part.color} rounded-2xl ${commonClasses}`}`}>
           <GlossyOverlay />
         </div>
       );
@@ -353,6 +429,23 @@ const BuilderGame: React.FC<BuilderGameProps> = ({ level, onComplete }) => {
       >
         <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
         
+        {/* Silhouette Blueprint Guide */}
+        {currentTemplateData.blueprint.map((bp, i) => (
+          <div
+            key={`bp-${i}`}
+            style={{ 
+              left: `${bp.x}%`, 
+              top: `${bp.y}%`, 
+              position: 'absolute', 
+              transform: `translate(-50%, -50%) rotate(${bp.rotation || 0}deg)`, 
+              zIndex: 1,
+              pointerEvents: 'none'
+            }}
+          >
+            <ShapeRenderer part={bp} isGhost={true} />
+          </div>
+        ))}
+
         {placedParts.map((part) => (
           <div
             key={part.id}
