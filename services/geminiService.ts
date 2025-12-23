@@ -3,9 +3,6 @@ let audioContext: AudioContext | null = null;
 let selectedVoice: SpeechSynthesisVoice | null = null;
 let isAudioUnlocked = false;
 
-/**
- * Intenta encontrar la mejor voz en español disponible.
- */
 const loadVoice = () => {
   if (!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
@@ -18,38 +15,31 @@ const loadVoice = () => {
   }
 };
 
-// Escuchar cuando las voces cambian
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   window.speechSynthesis.onvoiceschanged = loadVoice;
   loadVoice();
 }
 
-/**
- * Desbloquea el audio en dispositivos móviles (APK/WebView).
- * DEBE llamarse directamente en el evento onClick/onTouchStart.
- */
 export const initAudio = () => {
   if (isAudioUnlocked) return;
 
   try {
-    // 1. Desbloquear AudioContext (Sonidos)
     const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
     if (AudioCtx) {
       audioContext = new AudioCtx();
       if (audioContext.state === 'suspended') {
         audioContext.resume();
       }
-      // Emitir un micro-sonido para validar el contexto ante el SO
+      // Micro-sonido seguro para desbloquear hardware
       const osc = audioContext.createOscillator();
       const g = audioContext.createGain();
-      g.gain.value = 0.001;
+      g.gain.setValueAtTime(0.001, audioContext.currentTime);
       osc.connect(g);
       g.connect(audioContext.destination);
       osc.start(0);
-      osc.stop(0.01);
+      osc.stop(audioContext.currentTime + 0.01);
     }
 
-    // 2. Desbloquear SpeechSynthesis (Voz)
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(" ");
@@ -59,9 +49,9 @@ export const initAudio = () => {
     }
     
     isAudioUnlocked = true;
-    console.log("Audio desbloqueado correctamente");
+    console.log("Sistema de audio Osiel activado");
   } catch (e) {
-    console.error("Fallo al desbloquear audio:", e);
+    console.error("Fallo al activar audio:", e);
   }
 };
 
@@ -87,37 +77,26 @@ export const getEncouragement = async (buddyName: string, action: string) => {
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
-/**
- * Reproduce texto a voz.
- * CRÍTICO: En WebViews, llamar esto fuera de un tick de usuario puede causar 'not-allowed'.
- */
-export const speakText = (text: string) => {
+export const speakText = (text: string, options?: { pitch?: number, rate?: number }) => {
   if (!('speechSynthesis' in window)) return;
-  
-  // Si no está desbloqueado, intentamos forzar un inicio (aunque puede fallar si no es un evento de usuario directo)
-  if (!isAudioUnlocked) {
-    initAudio();
-  }
+  if (!isAudioUnlocked) initAudio();
 
-  // Cancelar inmediatamente cualquier discurso previo
   window.speechSynthesis.cancel();
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'es-MX';
-  utterance.pitch = 1.1; 
-  utterance.rate = 1.0;
+  utterance.pitch = options?.pitch ?? 1.1; 
+  utterance.rate = options?.rate ?? 1.0;
   
   if (!selectedVoice) loadVoice();
   if (selectedVoice) utterance.voice = selectedVoice;
   
   utterance.onerror = (e: any) => {
-    // Silenciamos los errores comunes de políticas de navegador para no ensuciar la consola del APK
     if (e.error !== 'interrupted' && e.error !== 'not-allowed') {
       console.error("Error SpeechSynthesis:", e.error);
     }
   };
   
-  // Ejecutamos SIN setTimeout para no perder la "User Activation" en WebViews estrictos
   window.speechSynthesis.speak(utterance);
 };
 
@@ -127,11 +106,7 @@ export const playSoundEffect = (type: SoundEffectType) => {
   try {
     if (!audioContext) initAudio();
     if (!audioContext) return;
-    
-    // Si el contexto se suspendió por inactividad, intentar resumirlo
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
+    if (audioContext.state === 'suspended') audioContext.resume();
 
     const now = audioContext.currentTime;
     const osc = audioContext.createOscillator();
@@ -140,12 +115,13 @@ export const playSoundEffect = (type: SoundEffectType) => {
     osc.connect(gain);
     gain.connect(audioContext.destination);
 
+    // IMPORTANTE: exponentialRampToValueAtTime NO permite el valor 0. Usamos 0.0001 en su lugar.
     if (type === 'pop') {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(800, now);
       osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
       gain.gain.setValueAtTime(0.2, now);
-      gain.gain.linearRampToValueAtTime(0, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       osc.start(); osc.stop(now + 0.1);
     } else if (type === 'drag') {
       osc.type = 'sine';
@@ -165,7 +141,7 @@ export const playSoundEffect = (type: SoundEffectType) => {
       osc.frequency.setValueAtTime(523.25, now);
       osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.2);
       gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
       osc.start(); osc.stop(now + 0.2);
     } else if (type === 'incorrect') {
       osc.type = 'square';
@@ -181,7 +157,7 @@ export const playSoundEffect = (type: SoundEffectType) => {
         o.connect(g); g.connect(audioContext!.destination);
         o.frequency.value = f;
         g.gain.setValueAtTime(0.1, now + i * 0.1);
-        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.1 + 0.4);
         o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.4);
       });
     }

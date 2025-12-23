@@ -50,15 +50,20 @@ const CountingGame: React.FC<CountingGameProps> = ({ level, onComplete }) => {
       const next = current + 1;
       setCurrent(next);
       playSoundEffect('pop');
-      speakText(next.toString());
+      speakText(next.toString()); // Canta el número actual
       
       if (next === target) {
+        // Marcamos como finalizado pero esperamos un poco para la felicitación
+        // para que no se interrumpa el habla del último número
         setIsFinished(true);
-        playSoundEffect('complete');
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        const msg = await getEncouragement("Toby el Topo", `conteo`);
-        setFeedback(msg);
-        speakText(msg);
+        
+        setTimeout(async () => {
+          playSoundEffect('complete');
+          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          const msg = await getEncouragement("Toby el Topo", `conteo`);
+          setFeedback(msg);
+          speakText(msg);
+        }, 1000); 
       }
     } else {
       playSoundEffect('incorrect');
