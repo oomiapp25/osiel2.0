@@ -30,7 +30,6 @@ export const initAudio = () => {
       if (audioContext.state === 'suspended') {
         audioContext.resume();
       }
-      // Micro-sonido seguro para desbloquear hardware
       const osc = audioContext.createOscillator();
       const g = audioContext.createGain();
       g.gain.setValueAtTime(0.001, audioContext.currentTime);
@@ -49,7 +48,6 @@ export const initAudio = () => {
     }
     
     isAudioUnlocked = true;
-    console.log("Sistema de audio Osiel activado");
   } catch (e) {
     console.error("Fallo al activar audio:", e);
   }
@@ -60,12 +58,12 @@ export const getDynamicInstruction = async (gameType: string, target: string, ge
   const art = articles[gender] || 'el';
   
   const instructions: Record<string, string[]> = {
-    "contar": [`¡Vamos a contar ${target}!`, `¿Me ayudas a contar ${target}?`, `¡Contemos juntos ${target}!`],
-    "reconocer partes del rostro": [`¿Dónde están ${art} ${target}?`, `¡Toca ${art} ${target} de Maya!`, `¿Puedes encontrar ${art} ${target}?`],
-    "shapes": [`¿Dónde está ${art} ${target}?`, `¡Busca ${art} ${target} de colores!`, `¡Toca ${art} ${target} ahora!`],
+    "contar": [`¡Contemos ${target} juntitos!`, `¿Me ayudas a contar ${target}?`, `¡Uno, dos, tres... contemos ${target}!`],
+    "reconocer partes del rostro": [`¿Dónde está ${art} ${target}?`, `¡Toca ${art} ${target} de la monita!`, `Busca ${art} ${target} pequeñitos.`],
+    "shapes": [`Busca ${art} ${target} de colores.`, `¡Toca ${art} ${target} ahora!`, `¿Dónde está ${art} ${target} bonito?`],
     "sizes": [`Toca ${art === 'el' || art === 'los' ? 'el' : 'la'} más ${target}`, `¿Cuál es ${art === 'el' || art === 'los' ? 'el' : 'la'} ${target}?`],
-    "patterns": [`¿Qué sigue ahora?`, `¡Completa el patrón!`],
-    "builder": ["¡Vamos a construir!", "Pon las piezas donde quieras.", "¡Haz un dibujo increíble!"]
+    "patterns": [`¿Qué sigue ahora?`, `¡Haz la cadenita!`],
+    "builder": ["¡Vamos a armar una figurita!", "Pon las piezas sobre las sombritas.", "¡Hazlo bonito!"]
   };
 
   const pool = instructions[gameType] || [`Busca ${target}`];
@@ -73,7 +71,7 @@ export const getDynamicInstruction = async (gameType: string, target: string, ge
 };
 
 export const getEncouragement = async (buddyName: string, action: string) => {
-  const messages = ["¡Lo hiciste genial!", "¡Eres increíble!", "¡Muy bien hecho!", "¡Qué inteligente!", "¡Excelente trabajo!"];
+  const messages = ["¡Bravo, lo hiciste súper!", "¡Qué lindo te quedó!", "¡Eres un campeón!", "¡Muy bien, corazón!", "¡Excelente trabajo!"];
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
@@ -85,17 +83,12 @@ export const speakText = (text: string, options?: { pitch?: number, rate?: numbe
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'es-MX';
-  utterance.pitch = options?.pitch ?? 1.1; 
-  utterance.rate = options?.rate ?? 1.0;
+  // Ajuste de fonética para infantes: Tono más alto (pitch 1.3) y velocidad más lenta (rate 0.8)
+  utterance.pitch = options?.pitch ?? 1.3; 
+  utterance.rate = options?.rate ?? 0.8;
   
   if (!selectedVoice) loadVoice();
   if (selectedVoice) utterance.voice = selectedVoice;
-  
-  utterance.onerror = (e: any) => {
-    if (e.error !== 'interrupted' && e.error !== 'not-allowed') {
-      console.error("Error SpeechSynthesis:", e.error);
-    }
-  };
   
   window.speechSynthesis.speak(utterance);
 };
@@ -115,7 +108,6 @@ export const playSoundEffect = (type: SoundEffectType) => {
     osc.connect(gain);
     gain.connect(audioContext.destination);
 
-    // IMPORTANTE: exponentialRampToValueAtTime NO permite el valor 0. Usamos 0.0001 en su lugar.
     if (type === 'pop') {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(800, now);
