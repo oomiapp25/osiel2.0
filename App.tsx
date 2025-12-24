@@ -103,7 +103,7 @@ const App: React.FC = () => {
         )}
 
         {view === 'game' && activeBuddy && (
-          <div className="bg-white/70 backdrop-blur-md rounded-[2.5rem] w-full max-w-5xl flex flex-col shadow-2xl overflow-hidden border-4 md:border-8 border-white animate-pop-in h-full max-h-[85dvh]">
+          <div className="bg-white/70 backdrop-blur-md rounded-[2.5rem] w-full max-w-5xl flex flex-col shadow-2xl overflow-hidden border-4 md:border-8 border-white animate-pop-in h-full max-h-[92dvh]">
             <div className="flex-grow relative overflow-y-auto no-scrollbar">
               {activeBuddy === 'toby' && <CountingGame level={buddyLevels.toby} onComplete={handleLevelUp} />}
               {activeBuddy === 'lila' && <ShapesGame level={buddyLevels.lila} onComplete={handleLevelUp} />}
