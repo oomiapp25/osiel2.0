@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { getEncouragement, speakText, playSoundEffect, getDynamicInstruction, initAudio } from '../../services/geminiService.ts';
 import confetti from 'https://cdn.skypack.dev/canvas-confetti';
-import { Pencil, Eraser, Circle, Square, Triangle, Trash2, Check, Sparkles, ChevronRight, Palette, Wand2, Grid3X3, Minus, Plus, Download } from 'lucide-react';
+import { Pencil, Eraser, Circle, Square, Triangle, Trash2, Check, Sparkles, ChevronRight, Palette, Wand2, Grid3X3, Minus, Plus } from 'lucide-react';
 
 interface DrawingGameProps {
   level: number;
@@ -26,6 +26,7 @@ const PALETTE = [
 const DrawingGame: React.FC<DrawingGameProps> = ({ level, onComplete }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  
   const [activeTool, setActiveTool] = useState<Tool>('pencil');
   const [activeColor, setActiveColor] = useState(PALETTE[0].hex);
   const [brushSize, setBrushSize] = useState(15);
@@ -34,146 +35,166 @@ const DrawingGame: React.FC<DrawingGameProps> = ({ level, onComplete }) => {
   const [isFinished, setIsFinished] = useState(false);
   const [strokeCount, setStrokeCount] = useState(0);
 
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const isDrawingRef = useRef(false);
-  const lastXRef = useRef(0);
-  const lastYRef = useRef(0);
+  const lastPosRef = useRef({ x: 0, y: 0 });
   const hueRef = useRef(0);
+  
+  const settingsRef = useRef({
+    tool: activeTool,
+    color: activeColor,
+    size: brushSize
+  });
 
-  // Inicialización y gestión de eventos nativos para máxima compatibilidad
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    settingsRef.current = { tool: activeTool, color: activeColor, size: brushSize };
+  }, [activeTool, activeColor, brushSize]);
 
+  useEffect(() => {
     const init = async () => {
       const msg = await getDynamicInstruction("drawing", "un dibujo");
       setFeedback(msg);
       speakText(msg);
     };
     init();
+  }, [level]);
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
     const setupCanvas = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect();
-      if (!rect) return;
-      
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
+      const container = containerRef.current;
+      if (!container) return;
 
-      const ctx = canvas.getContext('2d');
+      const { width, height } = container.getBoundingClientRect();
+      if (width <= 0 || height <= 0) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      
+      // Guardar lo pintado
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (tempCtx) tempCtx.drawImage(canvas, 0, 0);
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      const ctx = canvas.getContext('2d', { alpha: false });
       if (ctx) {
         ctx.scale(dpr, dpr);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, rect.width, rect.height);
+        ctx.fillRect(0, 0, width, height);
+        
+        // Restaurar
+        if (tempCanvas.width > 0) {
+          ctx.drawImage(tempCanvas, 0, 0, width, height);
+        }
+        ctxRef.current = ctx;
       }
     };
 
     setupCanvas();
+    const ro = new ResizeObserver(() => setupCanvas());
+    ro.observe(containerRef.current!);
+    return () => ro.disconnect();
+  }, []);
 
-    // Handlers directos al DOM para evitar problemas con eventos sintéticos de React en tablets
-    const onPointerDown = (e: PointerEvent) => {
-      if (isFinished) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isFinished) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      if (['pencil', 'eraser', 'magic'].includes(activeTool)) {
-        isDrawingRef.current = true;
-        lastXRef.current = x;
-        lastYRef.current = y;
-        
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        applyBrushSettings(ctx);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-      } else {
-        drawStamp(ctx, x, y, activeTool as Tool);
-        setStrokeCount(s => s + 1);
-        playSoundEffect('stamp');
-      }
-    };
+    canvas.setPointerCapture(e.pointerId);
+    isDrawingRef.current = true;
+    
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
+    lastPosRef.current = { x, y };
 
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isDrawingRef.current || isFinished) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+    const { tool, color, size } = settingsRef.current;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
 
+    if (['pencil', 'eraser', 'magic'].includes(tool)) {
       ctx.beginPath();
-      ctx.moveTo(lastXRef.current, lastYRef.current);
-      applyBrushSettings(ctx);
+      ctx.moveTo(x, y);
+      applyStyles(ctx);
       ctx.lineTo(x, y);
       ctx.stroke();
-      
-      lastXRef.current = x;
-      lastYRef.current = y;
-      
-      if (Math.random() > 0.98) playSoundEffect('paint');
-    };
-
-    const onPointerUp = () => {
-      if (isDrawingRef.current) {
-        isDrawingRef.current = false;
-        setStrokeCount(s => s + 1);
-      }
-    };
-
-    canvas.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-
-    return () => {
-      canvas.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-    };
-  }, [level, activeTool, activeColor, brushSize, isFinished]);
-
-  const applyBrushSettings = (ctx: CanvasRenderingContext2D) => {
-    if (activeTool === 'eraser') {
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = brushSize * 4;
-    } else if (activeTool === 'magic') {
-      hueRef.current = (hueRef.current + 3) % 360;
-      ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
-      ctx.lineWidth = brushSize;
     } else {
-      ctx.strokeStyle = activeColor;
-      ctx.lineWidth = brushSize;
+      drawStamp(x, y, ctx, tool, color, size);
     }
   };
 
-  const drawStamp = (ctx: CanvasRenderingContext2D, x: number, y: number, type: Tool) => {
-    ctx.fillStyle = activeColor;
-    const size = brushSize * 4;
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDrawingRef.current || isFinished) return;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
+
+    if (['pencil', 'eraser', 'magic'].includes(settingsRef.current.tool)) {
+      ctx.beginPath();
+      ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+      applyStyles(ctx);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      lastPosRef.current = { x, y };
+      if (Math.random() > 0.95) playSoundEffect('paint');
+    }
+  };
+
+  const applyStyles = (ctx: CanvasRenderingContext2D) => {
+    const { tool, color, size } = settingsRef.current;
+    if (tool === 'eraser') {
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = size * 3;
+    } else if (tool === 'magic') {
+      hueRef.current = (hueRef.current + 10) % 360;
+      ctx.strokeStyle = `hsl(${hueRef.current}, 100%, 50%)`;
+      ctx.lineWidth = size;
+    } else {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = size;
+    }
+  };
+
+  const drawStamp = (x: number, y: number, ctx: CanvasRenderingContext2D, tool: string, color: string, size: number) => {
+    ctx.fillStyle = color;
+    const s = size * 4;
     ctx.beginPath();
-    if (type === 'circle') ctx.arc(x, y, size / 2, 0, Math.PI * 2);
-    else if (type === 'square') ctx.rect(x - size / 2, y - size / 2, size, size);
-    else if (type === 'triangle') {
-      ctx.moveTo(x, y - size / 2);
-      ctx.lineTo(x - size / 2, y + size / 2);
-      ctx.lineTo(x + size / 2, y + size / 2);
+    if (tool === 'circle') ctx.arc(x, y, s/2, 0, Math.PI*2);
+    else if (tool === 'square') ctx.rect(x - s/2, y - s/2, s, s);
+    else if (tool === 'triangle') {
+      ctx.moveTo(x, y - s/2);
+      ctx.lineTo(x - s/2, y + s/2);
+      ctx.lineTo(x + s/2, y + s/2);
       ctx.closePath();
     }
     ctx.fill();
+    playSoundEffect('stamp');
+    setStrokeCount(v => v + 1);
+  };
+
+  const handlePointerUp = () => {
+    if (isDrawingRef.current) {
+      isDrawingRef.current = false;
+      setStrokeCount(v => v + 1);
+    }
   };
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
+    const ctx = ctxRef.current;
+    if (!ctx || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, rect.width, rect.height);
     playSoundEffect('pop');
@@ -184,138 +205,115 @@ const DrawingGame: React.FC<DrawingGameProps> = ({ level, onComplete }) => {
     initAudio();
     setIsFinished(true);
     playSoundEffect('complete');
-    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     const msg = await getEncouragement("Leo", "dibujo");
     setFeedback(msg);
     speakText(msg);
   };
 
-  const PaperBackground = () => (
-    <div className="absolute inset-0 pointer-events-none opacity-5 transition-opacity duration-300">
-      {paperType === 'grid' && (
-        <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      )}
-      {paperType === 'dots' && (
-        <div className="w-full h-full" style={{ backgroundImage: 'radial-gradient(#000 2px, transparent 0)', backgroundSize: '40px 40px' }} />
-      )}
-    </div>
-  );
-
   return (
-    <div className="flex flex-col h-full bg-slate-50 transition-colors duration-500 relative select-none">
-      <header className="p-2 md:p-4 bg-white border-b-2 border-slate-100 flex justify-between items-center px-4 md:px-8 shrink-0 z-50 shadow-sm">
-        <div className="flex items-center gap-3 md:gap-4">
-           <div className="p-2 md:p-3 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl text-white shadow-lg">
-             <Palette size={24} className="md:w-8 md:h-8" />
+    <div className="flex flex-col h-full bg-slate-50 relative select-none overflow-hidden touch-none">
+      {/* Header Compacto */}
+      <header className="p-2 md:p-3 bg-white border-b flex justify-between items-center px-4 shrink-0 z-50">
+        <div className="flex items-center gap-3">
+           <div className="p-2 bg-gradient-to-br from-orange-400 to-red-600 rounded-xl text-white shadow-md">
+             <Palette size={20} />
            </div>
-           <div className="flex flex-col">
-             <h1 className="font-kids text-slate-800 text-sm md:text-2xl leading-tight">Estudio Artístico Pro</h1>
-             <p className="text-[8px] md:text-xs font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Lienzo Creativo para Tablets</p>
-           </div>
+           <h1 className="font-kids text-slate-800 text-sm md:text-xl">Lienzo Mágico</h1>
         </div>
         
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => { setPaperType(p => p === 'blank' ? 'grid' : p === 'grid' ? 'dots' : 'blank'); playSoundEffect('pop'); }}
-            className="bg-slate-50 p-2 md:p-3 rounded-xl text-slate-600 hover:bg-white border border-slate-200 transition-colors"
-          >
-            <Grid3X3 size={20} className="md:w-6 md:h-6" />
+          <button onClick={() => setPaperType(p => p === 'blank' ? 'grid' : 'blank')} className="bg-slate-50 p-2 rounded-xl text-slate-500 border active:scale-90">
+            <Grid3X3 size={20} />
           </button>
-          <button onClick={clearCanvas} className="bg-red-50 p-2 md:p-3 rounded-xl text-red-500 border border-red-100 active:bg-red-100 transition-colors">
-            <Trash2 size={20} className="md:w-6 md:h-6" />
+          <button onClick={clearCanvas} className="bg-red-50 p-2 rounded-xl text-red-500 border border-red-100 active:scale-90">
+            <Trash2 size={20} />
           </button>
         </div>
       </header>
 
-      <div className="flex-grow flex relative m-2 md:m-4 rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-xl border-4 md:border-8 border-white bg-white ring-1 ring-slate-200">
-        <PaperBackground />
-        <canvas 
-          ref={canvasRef}
-          className="absolute inset-0 cursor-crosshair touch-none"
-          style={{ touchAction: 'none' }}
-        />
-
-        {/* Barra de Herramientas Izquierda con Animación de Selección */}
-        <div className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 md:gap-4 z-40 bg-white/90 p-2 rounded-3xl shadow-xl border border-white backdrop-blur-sm">
+      {/* Contenido Principal con DVH */}
+      <div className="flex-grow flex flex-col md:flex-row p-2 md:p-4 gap-2 md:gap-4 overflow-hidden">
+        
+        {/* Barra Lateral Izquierda */}
+        <aside className="flex md:flex-col gap-2 z-40 bg-white p-2 rounded-2xl shadow-lg border self-center md:self-auto shrink-0">
           {[
-            { id: 'pencil', icon: <Pencil size={20} />, color: 'bg-orange-500' },
-            { id: 'magic', icon: <Wand2 size={20} />, color: 'bg-orange-500' },
-            { id: 'eraser', icon: <Eraser size={20} />, color: 'bg-orange-500' },
+            { id: 'pencil', icon: <Pencil size={20} />, color: 'orange' },
+            { id: 'magic', icon: <Wand2 size={20} />, color: 'purple' },
+            { id: 'eraser', icon: <Eraser size={20} />, color: 'slate' },
+            { id: 'circle', icon: <Circle size={20} />, color: 'blue' },
+            { id: 'square', icon: <Square size={20} />, color: 'blue' },
+            { id: 'triangle', icon: <Triangle size={20} />, color: 'blue' },
           ].map(tool => (
             <button
               key={tool.id}
               onClick={() => { setActiveTool(tool.id as Tool); playSoundEffect('pop'); }}
-              className={`w-10 h-10 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300
-                ${activeTool === tool.id ? `${tool.color} text-white scale-110 shadow-lg animate-wiggle` : 'bg-white text-slate-400 hover:text-orange-400'}`}
+              className={`w-10 h-10 md:w-14 md:h-14 rounded-xl flex items-center justify-center transition-all
+                ${activeTool === tool.id ? `bg-${tool.color}-500 text-white scale-110 shadow-lg` : 'bg-white text-slate-400'}`}
             >
               {tool.icon}
             </button>
           ))}
-          <div className="h-px bg-slate-100 mx-2" />
-          {[
-            { id: 'circle', icon: <Circle size={20} />, color: 'bg-blue-500' },
-            { id: 'square', icon: <Square size={20} />, color: 'bg-blue-500' },
-            { id: 'triangle', icon: <Triangle size={20} />, color: 'bg-blue-500' }
-          ].map(t => (
-            <button
-              key={t.id}
-              onClick={() => { setActiveTool(t.id as Tool); playSoundEffect('pop'); }}
-              className={`w-10 h-10 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-300
-                ${activeTool === t.id ? `${t.color} text-white scale-110 shadow-lg animate-wiggle` : 'bg-white text-slate-400 hover:text-blue-400'}`}
-            >
-              {t.icon}
-            </button>
-          ))}
+        </aside>
+
+        {/* Canvas centralizado */}
+        <div ref={containerRef} className="flex-grow relative rounded-2xl overflow-hidden shadow-inner border-4 border-white bg-white touch-none">
+          {paperType === 'grid' && (
+            <div className="absolute inset-0 pointer-events-none opacity-[0.05]" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+          )}
+          <canvas 
+            ref={canvasRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            className="absolute inset-0 cursor-crosshair touch-none"
+            style={{ touchAction: 'none' }}
+          />
         </div>
 
-        {/* Control de Grosor Derecha */}
-        <div className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 bg-white/90 p-3 rounded-full shadow-xl border border-white z-40 backdrop-blur-sm">
-          <button onClick={() => { setBrushSize(s => Math.min(80, s + 5)); playSoundEffect('pop'); }} className="p-1 md:p-2 text-slate-600 hover:text-orange-500 transition-colors"><Plus size={20}/></button>
-          <div className="w-6 h-32 md:h-48 bg-slate-100 rounded-full relative flex flex-col items-center justify-end p-1 overflow-hidden shadow-inner">
-            <div className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-full transition-all duration-300" style={{ height: `${(brushSize / 80) * 100}%` }} />
+        {/* Control de Grosor Derecho */}
+        <aside className="flex md:flex-col items-center gap-3 bg-white p-2 md:p-3 rounded-full shadow-lg border self-center md:self-auto">
+          <button onClick={() => setBrushSize(s => Math.min(80, s + 5))} className="p-1 text-slate-500"><Plus size={20}/></button>
+          <div className="w-16 md:w-4 h-4 md:h-32 bg-slate-100 rounded-full relative flex items-end">
+            <div className="w-full bg-orange-400 rounded-full transition-all" style={{ height: `${(brushSize/80)*100}%`, width: window.innerWidth < 768 ? `${(brushSize/80)*100}%` : '100%' }} />
           </div>
-          <button onClick={() => { setBrushSize(s => Math.max(2, s - 5)); playSoundEffect('pop'); }} className="p-1 md:p-2 text-slate-600 hover:text-orange-500 transition-colors"><Minus size={20}/></button>
-        </div>
+          <button onClick={() => setBrushSize(s => Math.max(5, s - 5))} className="p-1 text-slate-500"><Minus size={20}/></button>
+        </aside>
       </div>
 
-      <footer className="p-3 md:p-6 bg-white shrink-0 z-40 border-t-2 border-slate-50 shadow-inner">
-        <div className="flex flex-wrap justify-center gap-3 md:gap-5 max-w-4xl mx-auto">
+      {/* Footer Colores */}
+      <footer className="p-2 md:p-4 bg-white border-t relative shrink-0">
+        <div className="flex justify-center gap-2 md:gap-4 overflow-x-auto no-scrollbar py-1">
           {PALETTE.map(color => (
             <button
               key={color.hex}
               onClick={() => { setActiveColor(color.hex); playSoundEffect('pop'); if(activeTool==='eraser') setActiveTool('pencil'); }}
               style={{ backgroundColor: color.hex }}
-              className={`w-10 h-10 md:w-14 md:h-14 rounded-full border-2 transition-all shadow-md active:scale-90
-                ${activeColor === color.hex && activeTool !== 'eraser' && activeTool !== 'magic' ? 'scale-125 border-slate-900 ring-4 ring-orange-50' : 'border-white hover:scale-110'}`}
+              className={`w-10 h-10 md:w-14 md:h-14 rounded-full border-2 shrink-0 transition-transform
+                ${activeColor === color.hex && !['eraser','magic','circle','square','triangle'].includes(activeTool) ? 'scale-125 border-slate-800' : 'border-white shadow'}`}
             />
           ))}
         </div>
         
-        <div className="absolute -top-14 right-4 md:right-8 flex gap-3">
-          <button 
-            onClick={handleFinish} 
-            className={`w-24 h-24 md:w-32 md:h-32 rounded-full shadow-2xl flex flex-col items-center justify-center border-8 border-white transition-all active:scale-95
-              ${strokeCount > 0 ? 'bg-green-500 animate-bounce' : 'bg-slate-200 opacity-50 cursor-not-allowed'}`}
-          >
-            <Check size={32} className="text-white md:w-12 md:h-12" />
-            <span className="text-white font-kids text-[10px] md:text-sm uppercase tracking-tighter">¡Listo!</span>
-          </button>
-        </div>
+        <button 
+          onClick={handleFinish} 
+          className={`absolute -top-12 right-4 w-20 h-20 md:w-24 md:h-24 rounded-full shadow-xl flex flex-col items-center justify-center border-4 border-white transition-all
+            ${strokeCount > 0 ? 'bg-green-500 scale-100' : 'bg-slate-300 opacity-50 pointer-events-none'}`}
+        >
+          <Check size={32} className="text-white" />
+          <span className="text-white font-kids text-[10px] uppercase font-bold">Listo</span>
+        </button>
       </footer>
 
       {isFinished && (
-        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex flex-col items-center justify-center p-6 animate-pop-in">
-          <div className="text-center bg-white p-10 md:p-20 rounded-[3rem] md:rounded-[5rem] shadow-2xl border-4 md:border-8 border-orange-100 max-w-2xl w-full">
-            <div className="w-24 h-24 md:w-40 md:h-40 bg-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-8 text-orange-500 animate-wiggle">
-              <Sparkles size={64} className="md:w-24 md:h-24" />
-            </div>
-            <h3 className="text-4xl md:text-7xl font-kids text-slate-900 mb-6 uppercase tracking-tight">¡OBRA MAESTRA!</h3>
-            <p className="text-slate-400 mb-10 font-kids text-lg md:text-2xl italic leading-tight">"{feedback}"</p>
-            <button 
-              onClick={onComplete} 
-              className="bg-orange-600 text-white px-8 py-6 md:px-16 md:py-8 rounded-full text-2xl md:text-4xl font-kids shadow-xl border-b-8 border-orange-800 flex items-center justify-center gap-4 mx-auto active:translate-y-2 transition-all"
-            >
-              ¡SIGUIENTE! <ChevronRight size={32} />
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full animate-pop-in">
+            <Sparkles size={48} className="text-orange-500 mx-auto mb-4 animate-wiggle" />
+            <h3 className="text-3xl font-kids text-slate-900 mb-2 uppercase">¡GENIAL!</h3>
+            <p className="text-slate-500 mb-8 font-kids italic leading-tight">"{feedback}"</p>
+            <button onClick={onComplete} className="bg-orange-500 text-white w-full py-4 rounded-2xl text-xl font-kids shadow-lg border-b-4 border-orange-700 active:translate-y-1 transition-all">
+              ¡OTRO JUEGO!
             </button>
           </div>
         </div>
