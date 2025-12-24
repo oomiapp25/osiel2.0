@@ -30,9 +30,9 @@ interface BlueprintPart {
   rotation?: number;
 }
 
-type TemplateType = 'house' | 'snowman' | 'clown' | 'car' | 'train' | 'rocket' | 'cat';
+type TemplateType = 'house' | 'snowman' | 'car' | 'train' | 'rocket' | 'cat';
 
-const TEMPLATE_SEQUENCE: TemplateType[] = ['house', 'snowman', 'clown', 'car', 'train', 'rocket', 'cat'];
+const TEMPLATE_SEQUENCE: TemplateType[] = ['house', 'snowman', 'car', 'train', 'rocket', 'cat'];
 
 const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], blueprint: BlueprintPart[], bg: string, prompt: string }> = {
   house: {
@@ -48,9 +48,9 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'chimney', name: 'Chimenea', color: 'bg-zinc-700', renderType: 'rect', w: 30, h: 50 },
     ],
     blueprint: [
-      { x: 72, y: 38, w: 30, h: 50, renderType: 'rect' }, // Chimenea (atrás)
       { x: 50, y: 70, w: 150, h: 120, renderType: 'rect' }, // Pared
       { x: 50, y: 40, w: 190, h: 100, renderType: 'triangle' }, // Techo
+      { x: 72, y: 38, w: 30, h: 50, renderType: 'rect' }, // Chimenea (detrás)
       { x: 40, y: 80, w: 45, h: 70, renderType: 'door' }, // Puerta
       { x: 65, y: 65, w: 45, h: 45, renderType: 'window' }, // Ventana
     ]
@@ -68,32 +68,11 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'hat', name: 'Sombrerito', color: 'bg-zinc-800', renderType: 'rect', w: 65, h: 45 },
     ],
     blueprint: [
-      { x: 50, y: 78, w: 130, h: 130, renderType: 'circle' }, // Base
-      { x: 50, y: 55, w: 95, h: 95, renderType: 'circle' },  // Medio
-      { x: 50, y: 38, w: 75, h: 75, renderType: 'circle' },  // Cabeza
-      { x: 50, y: 40, w: 20, h: 35, renderType: 'triangle' }, // Nariz
-      { x: 50, y: 22, w: 65, h: 45, renderType: 'rect' },     // Sombrero
-    ]
-  },
-  clown: {
-    name: 'Payasito',
-    icon: <Smile />,
-    bg: 'bg-yellow-50',
-    prompt: '¡Un payasito! Pon su carita y su naricita roja.',
-    parts: [
-      { type: 'face', name: 'Carita', color: 'bg-amber-50', renderType: 'circle', w: 150, h: 150 },
-      { type: 'eye', name: 'Ojito', color: 'bg-black', renderType: 'eye', w: 24, h: 24 },
-      { type: 'nose', name: 'Nariz Roja', color: 'bg-red-600', renderType: 'circle', w: 35, h: 35 },
-      { type: 'hat', name: 'Gorrito', color: 'bg-yellow-400', renderType: 'triangle', w: 120, h: 130 },
-      { type: 'pom-pom', name: 'Pompón', color: 'bg-white', renderType: 'pom-pom', w: 30, h: 30 },
-    ],
-    blueprint: [
-      { x: 50, y: 60, w: 150, h: 150, renderType: 'circle' }, // Cara
-      { x: 40, y: 55, w: 24, h: 24, renderType: 'eye' },      // Ojo L
-      { x: 60, y: 55, w: 24, h: 24, renderType: 'eye' },      // Ojo R
-      { x: 50, y: 65, w: 35, h: 35, renderType: 'circle' },  // Nariz
-      { x: 50, y: 32, w: 120, h: 130, renderType: 'triangle' }, // Gorro
-      { x: 50, y: 18, w: 30, h: 30, renderType: 'pom-pom' }, // Pom-pom
+      { x: 50, y: 78, w: 130, h: 130, renderType: 'circle' },
+      { x: 50, y: 55, w: 95, h: 95, renderType: 'circle' },
+      { x: 50, y: 38, w: 75, h: 75, renderType: 'circle' },
+      { x: 50, y: 40, w: 20, h: 35, renderType: 'triangle' },
+      { x: 50, y: 22, w: 65, h: 45, renderType: 'rect' },
     ]
   },
   car: {
@@ -107,10 +86,10 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'wheel', name: 'Ruedita', color: 'bg-zinc-900', renderType: 'wheel', w: 55, h: 55 },
     ],
     blueprint: [
-      { x: 50, y: 65, w: 180, h: 70, renderType: 'rect' }, // Cuerpo
-      { x: 50, y: 48, w: 110, h: 50, renderType: 'rect' }, // Cabina
-      { x: 35, y: 80, w: 55, h: 55, renderType: 'wheel' }, // Rueda 1
-      { x: 65, y: 80, w: 55, h: 55, renderType: 'wheel' }, // Rueda 2
+      { x: 50, y: 65, w: 180, h: 70, renderType: 'rect' },
+      { x: 50, y: 48, w: 110, h: 50, renderType: 'rect' },
+      { x: 35, y: 80, w: 55, h: 55, renderType: 'wheel' },
+      { x: 65, y: 80, w: 55, h: 55, renderType: 'wheel' },
     ]
   },
   train: {
@@ -125,11 +104,11 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'cabin', name: 'Cabina', color: 'bg-green-500', renderType: 'rect', w: 65, h: 65 },
     ],
     blueprint: [
-      { x: 45, y: 65, w: 140, h: 100, renderType: 'rect' }, // Motor
-      { x: 35, y: 45, w: 35, h: 50, renderType: 'rect' },   // Chimenea
-      { x: 40, y: 82, w: 50, h: 50, renderType: 'wheel' },  // Rueda 1
-      { x: 60, y: 82, w: 50, h: 50, renderType: 'wheel' },  // Rueda 2
-      { x: 68, y: 55, w: 65, h: 65, renderType: 'rect' },   // Cabina
+      { x: 45, y: 65, w: 140, h: 100, renderType: 'rect' },
+      { x: 35, y: 45, w: 35, h: 50, renderType: 'rect' },
+      { x: 40, y: 82, w: 50, h: 50, renderType: 'wheel' },
+      { x: 60, y: 82, w: 50, h: 50, renderType: 'wheel' },
+      { x: 68, y: 55, w: 65, h: 65, renderType: 'rect' },
     ]
   },
   rocket: {
@@ -143,10 +122,10 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'fin', name: 'Aleta', color: 'bg-red-500', renderType: 'fin', w: 50, h: 60 },
     ],
     blueprint: [
-      { x: 50, y: 60, w: 80, h: 170, renderType: 'rect' }, // Cuerpo
-      { x: 50, y: 24, w: 80, h: 80, renderType: 'triangle' }, // Punta
-      { x: 38, y: 80, w: 50, h: 60, renderType: 'fin', rotation: 180 }, // Aleta L
-      { x: 62, y: 80, w: 50, h: 60, renderType: 'fin' }, // Aleta R
+      { x: 50, y: 60, w: 80, h: 170, renderType: 'rect' },
+      { x: 50, y: 24, w: 80, h: 80, renderType: 'triangle' },
+      { x: 38, y: 80, w: 50, h: 60, renderType: 'fin', rotation: 180 },
+      { x: 62, y: 80, w: 50, h: 60, renderType: 'fin' },
     ]
   },
   cat: {
@@ -162,11 +141,11 @@ const TEMPLATES: Record<TemplateType, { name: string, icon: any, parts: any[], b
       { type: 'whiskers', name: 'Bigotitos', color: 'text-zinc-400', renderType: 'whiskers', w: 70, h: 40 },
     ],
     blueprint: [
-      { x: 50, y: 72, w: 130, h: 130, renderType: 'circle' }, // Cuerpo
-      { x: 50, y: 40, w: 100, h: 100, renderType: 'circle' }, // Cabeza
-      { x: 40, y: 28, w: 40, h: 40, renderType: 'triangle' }, // Oreja L
-      { x: 60, y: 28, w: 40, h: 40, renderType: 'triangle' }, // Oreja R
-      { x: 70, y: 65, w: 30, h: 90, renderType: 'tail' },     // Cola
+      { x: 50, y: 72, w: 130, h: 130, renderType: 'circle' },
+      { x: 50, y: 40, w: 100, h: 100, renderType: 'circle' },
+      { x: 40, y: 28, w: 40, h: 40, renderType: 'triangle' },
+      { x: 60, y: 28, w: 40, h: 40, renderType: 'triangle' },
+      { x: 70, y: 65, w: 30, h: 90, renderType: 'tail' },
     ]
   }
 };

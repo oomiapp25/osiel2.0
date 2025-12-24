@@ -58,12 +58,13 @@ export const getDynamicInstruction = async (gameType: string, target: string, ge
   const art = articles[gender] || 'el';
   
   const instructions: Record<string, string[]> = {
-    "contar": [`¡Contemos ${target} juntitos!`, `¿Me ayudas a contar ${target}?`, `¡Uno, dos, tres... contemos ${target}!`],
-    "reconocer partes del rostro": [`¿Dónde está ${art} ${target}?`, `¡Toca ${art} ${target} de la monita!`, `Busca ${art} ${target} pequeñitos.`],
-    "shapes": [`Busca ${art} ${target} de colores.`, `¡Toca ${art} ${target} ahora!`, `¿Dónde está ${art} ${target} bonito?`],
-    "sizes": [`Toca ${art === 'el' || art === 'los' ? 'el' : 'la'} más ${target}`, `¿Cuál es ${art === 'el' || art === 'los' ? 'el' : 'la'} ${target}?`],
-    "patterns": [`¿Qué sigue ahora?`, `¡Haz la cadenita!`],
-    "builder": ["¡Vamos a armar una figurita!", "Pon las piezas sobre las sombritas.", "¡Hazlo bonito!"]
+    "contar": [`Vamos a contar ${target} juntos.`, `¿Puedes ayudarme a contar ${target}?`, `Uno, dos, tres... contemos ${target}.`],
+    "reconocer partes del rostro": [`Identifica ${art} ${target}.`, `Toca ${art} ${target} en la pantalla.`, `Busca ${art} ${target}.`],
+    "shapes": [`Busca el ${target}.`, `Selecciona el ${target} de color.`, `¿Cuál es el ${target}?`],
+    "sizes": [`Selecciona el objeto más ${target}.`, `Indica cuál es el ${target}.`],
+    "patterns": [`Observa el patrón, ¿qué sigue?`, `Completa la secuencia lógica.`],
+    "builder": ["Vamos a construir una figura.", "Coloca las piezas sobre las guías.", "Diseña tu construcción."],
+    "drawing": ["Es momento de crear. Usa los colores.", "Dibuja lo que prefieras en el lienzo.", "Utiliza las formas mágicas para decorar."]
   };
 
   const pool = instructions[gameType] || [`Busca ${target}`];
@@ -71,7 +72,7 @@ export const getDynamicInstruction = async (gameType: string, target: string, ge
 };
 
 export const getEncouragement = async (buddyName: string, action: string) => {
-  const messages = ["¡Bravo, lo hiciste súper!", "¡Qué lindo te quedó!", "¡Eres un campeón!", "¡Muy bien, corazón!", "¡Excelente trabajo!"];
+  const messages = ["Excelente trabajo.", "Has finalizado con éxito.", "Muy bien hecho.", "Tu progreso es notable.", "Felicidades por tu esfuerzo."];
   return messages[Math.floor(Math.random() * messages.length)];
 };
 
@@ -83,9 +84,9 @@ export const speakText = (text: string, options?: { pitch?: number, rate?: numbe
   
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'es-MX';
-  // Ajuste de fonética para infantes: Tono más alto (pitch 1.3) y velocidad más lenta (rate 0.8)
-  utterance.pitch = options?.pitch ?? 1.3; 
-  utterance.rate = options?.rate ?? 0.8;
+  // Voz de adulto: pitch balanceado (1.0) y ritmo natural (0.95)
+  utterance.pitch = options?.pitch ?? 1.0; 
+  utterance.rate = options?.rate ?? 0.95;
   
   if (!selectedVoice) loadVoice();
   if (selectedVoice) utterance.voice = selectedVoice;
@@ -93,7 +94,7 @@ export const speakText = (text: string, options?: { pitch?: number, rate?: numbe
   window.speechSynthesis.speak(utterance);
 };
 
-export type SoundEffectType = 'correct' | 'incorrect' | 'complete' | 'pop' | 'drag' | 'drop';
+export type SoundEffectType = 'correct' | 'incorrect' | 'complete' | 'pop' | 'drag' | 'drop' | 'paint' | 'stamp';
 
 export const playSoundEffect = (type: SoundEffectType) => {
   try {
@@ -142,6 +143,19 @@ export const playSoundEffect = (type: SoundEffectType) => {
       gain.gain.setValueAtTime(0.1, now);
       gain.gain.linearRampToValueAtTime(0, now + 0.3);
       osc.start(); osc.stop(now + 0.3);
+    } else if (type === 'paint') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      gain.gain.setValueAtTime(0.03, now);
+      gain.gain.linearRampToValueAtTime(0, now + 0.05);
+      osc.start(); osc.stop(now + 0.05);
+    } else if (type === 'stamp') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.start(); osc.stop(now + 0.1);
     } else if (type === 'complete') {
       [523, 659, 783, 1046].forEach((f, i) => {
         const o = audioContext!.createOscillator();

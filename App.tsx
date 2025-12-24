@@ -8,7 +8,7 @@ import SizesGame from './components/Games/SizesGame.tsx';
 import PatternsGame from './components/Games/PatternsGame.tsx';
 import BodyPartsGame from './components/Games/BodyPartsGame.tsx';
 import BuilderGame from './components/Games/BuilderGame.tsx';
-import ColorsGame from './components/Games/ColorsGame.tsx';
+import DrawingGame from './components/Games/DrawingGame.tsx';
 import ParentalControl from './components/ParentalControl.tsx';
 import { speakText, playSoundEffect, initAudio } from './services/geminiService.ts';
 import { BuddyLevels } from './types.ts';
@@ -19,18 +19,13 @@ const App: React.FC = () => {
   const [showParental, setShowParental] = useState(false);
   const [stickers, setStickers] = useState(0);
   const [buddyLevels, setBuddyLevels] = useState<any>({
-    toby: 1, lila: 1, payasin: 1, gogo: 1, pipo: 1, maya: 1, bruno: 1
+    toby: 1, lila: 1, leo: 1, gogo: 1, pipo: 1, maya: 1, bruno: 1
   });
 
   const handleStart = () => {
-    // 1. Ejecutar desbloqueo inmediatamente (Síncrono)
     initAudio(); 
-    
-    // 2. Ejecutar sonido y voz inmediatamente para "marcar" la interacción
     playSoundEffect('pop');
     speakText("¡Hola! Soy Osiel. ¿Con quién quieres jugar hoy?");
-    
-    // 3. Cambiar vista
     setView('selection');
   };
 
@@ -112,7 +107,7 @@ const App: React.FC = () => {
             <div className="flex-grow relative overflow-y-auto no-scrollbar">
               {activeBuddy === 'toby' && <CountingGame level={buddyLevels.toby} onComplete={handleLevelUp} />}
               {activeBuddy === 'lila' && <ShapesGame level={buddyLevels.lila} onComplete={handleLevelUp} />}
-              {activeBuddy === 'payasin' && <ColorsGame level={buddyLevels.payasin} onComplete={handleLevelUp} />}
+              {activeBuddy === 'leo' && <DrawingGame level={buddyLevels.leo} onComplete={handleLevelUp} />}
               {activeBuddy === 'maya' && <BodyPartsGame level={buddyLevels.maya} onComplete={handleLevelUp} />}
               {activeBuddy === 'gogo' && <SizesGame level={buddyLevels.gogo} onComplete={handleLevelUp} />}
               {activeBuddy === 'pipo' && <PatternsGame level={buddyLevels.pipo} onComplete={handleLevelUp} />}

@@ -21,14 +21,14 @@ export const BUDDIES = {
     themeColor: 'pink',
     teach: 'shapes'
   },
-  payasin: {
-    id: 'payasin',
-    name: 'Payasín',
-    description: '¡Diviértete con los colores!',
-    color: 'bg-red-50',
-    icon: <Palette className="w-12 h-12 text-red-500" />,
-    themeColor: 'red',
-    teach: 'colors'
+  leo: {
+    id: 'leo',
+    name: 'Leo el León Artista',
+    description: '¡Dibuja y pinta con formas mágicas!',
+    color: 'bg-yellow-50',
+    icon: <Palette className="w-12 h-12 text-orange-500" />,
+    themeColor: 'orange',
+    teach: 'drawing'
   },
   maya: {
     id: 'maya',
